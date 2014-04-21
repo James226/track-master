@@ -31,6 +31,7 @@ function TrackMaster:new(o)
 	self.green = CColor.new(0, 1, 0, 1)
 	self.yellow = CColor.new(1, 1, 0, 1)
 	self.red = CColor.new(1, 0, 0, 1)
+	self.clearDistance = 5
 	
 	self.hooks = {}
     return o
@@ -222,7 +223,7 @@ function TrackMaster:OnTimer()
 			self.marker[i]:SetWorldLocation(Vector3.InterpolateLinear(Vector3.New(playerPos.x, playerPos.y, playerPos.z), Vector3.New(targetPos.x, targetPos.y, targetPos.z), (1/20) * i))
 		end
 		
-		if self.target ~= nil and totalDistance < 5 then
+		if self.target ~= nil and self.clearDistance ~= -1 and totalDistance < self.clearDistance then
 			self:SetTarget(nil)
 		end
 	else
@@ -253,7 +254,7 @@ function TrackMaster:OnMailbox()
 	if closestMailbox ~= nil then
 		self:SetTarget(closestMailbox:GetPosition())
 	else
-		Print("Your a long way from a mailbox...")
+		Print("You're a long way from a mailbox...")
 	end
 end
 
@@ -272,13 +273,17 @@ function TrackMaster:OnUnitDestroyed(unit)
 	if unit:GetType() == 'Mailbox' then
 		self.mailboxList[unit:GetId()] = nil
 	end
+
+	if unit == self.target then
+		self:SetTarget(nil)
+	end
 end
 
 function TrackMaster:CalculateDistance(vector)
 	return math.sqrt(math.pow(vector.x, 2) + math.pow(vector.y, 2) + math.pow(vector.z, 2))
 end
 
-function TrackMaster:SetTarget(target)
+function TrackMaster:SetTarget(target, clearDistance)
 	if target ~= nil then
 		if Vector3.Is(target) then
 			local coord = string.format("(%d, %d, %d)", math.floor(target.x, 0.5), math.floor(target.y, 0.5), math.floor(target.z, 0.5))
@@ -290,6 +295,12 @@ function TrackMaster:SetTarget(target)
 		end
 	else
 		self.trackerPanel:FindChild("Coord"):SetText("")
+	end
+
+	if clearDistance ~= nil then
+		self.clearDistance = clearDistance
+	else
+		self.clearDistance = 5
 	end
 
 	self.target = target
