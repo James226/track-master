@@ -130,7 +130,7 @@ function TrackMaster_Farming:CalculateDistance(vector)
 end
 
 function TrackMaster_Farming:OnUnitCreated(unit)
-	if unit:GetType() == 'Harvest' and unit:CanBeHarvestedBy(GameLib.GetPlayerUnit()) then
+	if unit:GetType() == 'Harvest' and unit:CanBeHarvestedBy(GameLib.GetPlayerUnit()) and unit:GetHarvestRequiredTradeskillName() == "Relic Hunter" then
 		self.units[unit:GetId()] = unit
 	end
 end
