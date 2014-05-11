@@ -167,7 +167,11 @@ function TrackMaster:OnMark()
 	--local pos = GameLib.GetPlayerUnit():GetPosition()
 	for i = 0, 20 do
 		self.marker[i] = Apollo.LoadForm("TrackMaster.xml", "Marker", "InWorldHudStratum", self)
-		self.marker[i]:Show(true)
+		if not self.marker[i]:IsOnScreen() then
+			self.marker[i]:Show(false)
+		else
+			self.marker[i]:Show(true)
+		end
 		
 		--pos.x = origPos.x + 25 * math.cos(((2 * math.pi) / 20) * i)
 		--pos.z = origPos.z + 25 * math.sin(((2 * math.pi) / 20) * i)
@@ -218,9 +222,13 @@ function TrackMaster:OnTimer()
 			else
 				color = self.red
 			end
-			self.marker[i]:Show(true)	
 			self.marker[i]:SetBGColor(color)
 			self.marker[i]:SetWorldLocation(Vector3.InterpolateLinear(Vector3.New(playerPos.x, playerPos.y, playerPos.z), Vector3.New(targetPos.x, targetPos.y, targetPos.z), (1/20) * i))
+			if not self.marker[i]:IsOnScreen() then
+				self.marker[i]:Show(false)
+			else
+				self.marker[i]:Show(true)
+			end
 		end
 		
 		if self.target ~= nil and self.clearDistance ~= -1 and totalDistance < self.clearDistance then
