@@ -366,7 +366,12 @@ function TrackMaster:AddHookQuestArrow()
 			elseif questHolder and questHolder.queOwner then
 				local quest = wndHandler:GetData().queOwner
 				if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
-					local pos = quest:GetMapRegions()[math.min(#quest:GetMapRegions(), wndHandler:GetData().nObjectiveIdx + 1)].tIndicator
+					local pos = nil
+					if wndHandler:GetData().nObjectiveIdx ~= nil then
+						pos = quest:GetMapRegions()[math.min(#quest:GetMapRegions(), wndHandler:GetData().nObjectiveIdx + 1)].tIndicator
+					else
+						pos = quest:GetMapRegions()[1].tIndicator
+					end
 					self:SetTarget(Vector3.New(pos.x, pos.y, pos.z))
 				end
 			end
