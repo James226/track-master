@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="Caedo" APIVersion="8" Name="TrackMaster_Farming" Description="Track farming nodes using Track Master" Version="0.2">
+<Addon Author="Caedo" APIVersion="8" Name="TrackMaster_Farming" Description="Track farming nodes using Track Master" Version="0.4.0">
     <Script Name="TrackMaster_Farming.lua"/>
     <Form Name="TrackMaster_Farming.xml"/>
 </Addon>

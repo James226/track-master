@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------------------
 -- Client Lua Script for TrackMaster_Farming
--- Copyright (c) NCsoft. All rights reserved
+-- Copyright (c) James Parker. All rights reserved
 -----------------------------------------------------------------------------------------------
  
 require "Window"
@@ -9,11 +9,6 @@ require "Window"
 -- TrackMaster_Farming Module Definition
 -----------------------------------------------------------------------------------------------
 local TrackMaster_Farming = {} 
- 
------------------------------------------------------------------------------------------------
--- Constants
------------------------------------------------------------------------------------------------
--- e.g. local kiExampleVariableMax = 999
  
 -----------------------------------------------------------------------------------------------
 -- Initialization
@@ -25,7 +20,8 @@ function TrackMaster_Farming:new(o)
 
     self.units = {}
 	self.enabled = true
-
+	self.selectedFilters = {}
+	
     return o
 end
 
@@ -50,7 +46,8 @@ function TrackMaster_Farming:OnSave(eLevel)
         return nil
     end
 	local saveData = { }
-	saveData["Enabled"] = self.enabled
+	saveData.Enabled = self.enabled
+	saveData.SelectedFilters = self.selectedFilters
 	return saveData
 end
 
@@ -59,10 +56,14 @@ function TrackMaster_Farming:OnRestore(eLevel, tData)
 		return nil
 	end
 	
-	if tData["Enabled"] then
+	if tData.Enabled then
 		self:EnableFarming()
 	else
 		self:DisableFarming()
+	end
+	
+	if tData.SelectedFilters then
+		self.selectedFilters = tData.SelectedFilters
 	end
 end
 
@@ -88,9 +89,27 @@ function TrackMaster_Farming:GetAsyncLoadStatus()
 		self.trackerPanelWnd:ArrangeChildrenVert()
 		self.xmlDoc = nil
 		
+		local professionIndex = {}	
+		local professionDropdown = self.trackerPanelWnd:FindChild("MenuWindow"):FindChild("Professions"):FindChild("ProfessionsDropdown")
+		professionDropdown:SetData(professionIndex)
+		for _, profession in pairs(CraftingLib.GetKnownTradeskills()) do
+			professionDropdown:AddItem(profession.strName, "", profession.eId)
+			table.insert(professionIndex, profession)
+		end
+		
+		local professionList = self.trackerPanelWnd:FindChild("MenuWindow"):FindChild("ProfessionsList")
+		professionList:DestroyChildren()
+
+		for _, profession in pairs(self.selectedFilters) do
+			local filterOption = Apollo.LoadForm("TrackMaster_Farming.xml", "TrackMaster_FarmingForm.MenuWindow.ProfessionsList.ProfessionFilterOption", professionList, self)
+			filterOption:SetData(profession)
+			filterOption:SetText(profession.strName)
+			self.selectedFilters[profession.strName] = profession
+			professionList:ArrangeChildrenVert()
+		end
+		
 		self.timer = ApolloTimer.Create(1.0, true, "OnTimer", self)
 		
-		-- register our Addon so others can wait for it if they want
 		g_AddonsLoaded["TrackMaster_Farming"] = true
 		
 		return Apollo.AddonLoadStatus.Loaded
@@ -113,14 +132,14 @@ function TrackMaster_Farming:OnTimer()
 			local pos = unit:GetPosition()
 			local dist = self:CalculateDistance(Vector3.New(playerPos.x - pos.x, playerPos.y - pos.y, playerPos.z - pos.z))
 	
-			if dist < closestUnitDist then
+			if dist < closestUnitDist and self:IsInFilter(unit) then
 				closestUnit = unit
 				closestUnitDist = dist
 			end
 		end
 		
 		if closestUnit ~= nil then
-			Apollo.GetAddon("TrackMaster"):SetTarget(closestUnit)
+			Apollo.GetAddon("TrackMaster"):SetTarget(closestUnit, 5)
 		end
 	end
 end
@@ -141,6 +160,17 @@ function TrackMaster_Farming:OnUnitDestroyed(unit)
 	end
 end
 
+function TrackMaster_Farming:TableContainsElements(table)
+	for _, _ in pairs(table) do
+		return true
+	end
+	return false
+end
+
+function TrackMaster_Farming:IsInFilter(unit)
+	return not self:TableContainsElements(self.selectedFilters) or self.selectedFilters[unit:GetHarvestRequiredTradeskillName()] ~= nil
+end
+
 ---------------------------------------------------------------------------------------------------
 -- TrackMaster_FarmingForm Functions
 ---------------------------------------------------------------------------------------------------
@@ -155,7 +185,9 @@ end
 function TrackMaster_Farming:DisableFarming()
 	if self.enabled then
 		self.enabled = false
-		self.timer:Stop()	
+		if self.timer ~= nil then
+			self.timer:Stop()
+		end
 	end
 end
 
@@ -165,6 +197,40 @@ end
 
 function TrackMaster_Farming:OnEnableFarmingUnChecked( wndHandler, wndControl, eMouseButton )
 	self:DisableFarming()
+end
+
+function TrackMaster_Farming:OnOpenWindow( wndHandler, wndControl, x, y )
+	self.trackerPanelWnd:FindChild("MenuWindow"):Show(true, false)
+end
+
+function TrackMaster_Farming:OnCloseMenu( wndHandler, wndControl, x, y )
+	if not self.trackerPanelWnd:ContainsMouse() and not self.trackerPanelWnd:FindChild("MenuWindow"):ContainsMouse() then
+		self.trackerPanelWnd:FindChild("MenuWindow"):Show(false, false)
+	end
+end
+
+function TrackMaster_Farming:OnAddTradeskillFilter( wndHandler, wndControl, selectedIndex)
+	local professionIndex = wndHandler:GetData()
+	if not self.selectedFilters[professionIndex[selectedIndex].strName] then
+		local professionList = self.trackerPanelWnd:FindChild("MenuWindow"):FindChild("ProfessionsList")
+		local filterOption = Apollo.LoadForm("TrackMaster_Farming.xml", "TrackMaster_FarmingForm.MenuWindow.ProfessionsList.ProfessionFilterOption", professionList, self)
+		filterOption:SetData(professionIndex[selectedIndex])
+		filterOption:SetText(professionIndex[selectedIndex].strName)
+		wndControl:SetText("")
+		self.selectedFilters[professionIndex[selectedIndex].strName] = professionIndex[selectedIndex]
+		professionList:ArrangeChildrenVert()
+	end
+end
+
+function TrackMaster_Farming:OnRemoveFilter( wndHandler, wndControl, eMouseButton )
+	local professionList = self.trackerPanelWnd:FindChild("MenuWindow"):FindChild("ProfessionsList")
+	for _, option in pairs(professionList:GetChildren()) do
+		if option:IsChecked() then
+			self.selectedFilters[option:GetData().strName] = nil
+			option:Destroy()
+		end
+	end
+	professionList:ArrangeChildrenVert()
 end
 
 -----------------------------------------------------------------------------------------------
