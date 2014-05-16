@@ -207,7 +207,7 @@ function TrackMaster:OnTimer()
 			if self.clearDistance ~= -1 then
 				local distanceToPlayer = TrackMaster.GetDistanceFunction()
 				local distance = distanceToPlayer(curTarget)
-				if distance > self.clearDistance then
+				if distance < self.clearDistance then
 					self:SetTarget(nil)
 					curTarget = nil
 				end
@@ -328,7 +328,7 @@ function TrackMaster:SetTarget(target, clearDistance)
 	if clearDistance ~= nil then
 		self.clearDistance = clearDistance
 	else
-		self.clearDistance = 100
+		self.clearDistance = 20
 	end
 
 	self.target = target
