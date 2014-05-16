@@ -34,6 +34,7 @@ function TrackMaster:new(o)
 	self.clearDistance = 100
 	
 	self.hooks = {}
+	self.trackers = {}
     return o
 end
 
@@ -66,6 +67,8 @@ function TrackMaster:OnSave(eLevel)
 	saveData["Hooks"] = self.hooks
 	saveData["Pinned"] = self.pinned
 	saveData["Alpha"] = self.alpha
+	saveData["Trackers"] = self.trackers
+	
 	
 	return saveData
 end
@@ -97,16 +100,25 @@ function TrackMaster:OnRestore(eLevel, tData)
 		tData["Hooks"] = {}
 	end
 	
+	if tData["Trackers"] == nil then
+		tData["Trackers"] = {}
+	end
+
+	
 	self.hooks["Target"] = tData["Hooks"]["Target"] == nil and true or tData["Hooks"]["Target"]
 	self.hooks["QuestHintArrow"] = tData["Hooks"]["QuestHintArrow"] == nil and true or tData["Hooks"]["QuestHintArrow"]
 	self.hooks["ZoneMap"] = tData["Hooks"]["ZoneMap"] == nil and true or tData["Hooks"]["ZoneMap"]
 	self.hooks["GroupFrame"] = tData["Hooks"]["GroupFrame"] == nil and true or tData["Hooks"]["GroupFrame"]
 	
+	self.trackers["Focus"] = tData["Trackers"]["Focus"] == nil and false or tData["Trackers"]["Focus"]
+	
 	self.trackerPanel:FindChild("HookTarget"):SetCheck(self.hooks["Target"])
 	self.trackerPanel:FindChild("HookQuestHintArrow"):SetCheck(self.hooks["QuestHintArrow"])
 	self.trackerPanel:FindChild("HookZoneMap"):SetCheck(self.hooks["ZoneMap"])
 	self.trackerPanel:FindChild("HookGroupFrame"):SetCheck(self.hooks["GroupFrame"])
+	self.trackerPanel:FindChild("TrackFocus"):SetCheck(self.trackers["Focus"])
 	self:UpdateHooks()
+	self:UpdateTrackers()
 end
 
 -----------------------------------------------------------------------------------------------
@@ -360,6 +372,10 @@ function TrackMaster:UpdateHooks()
 	end
 end
 
+function TrackMaster:UpdateTrackers()
+	self:SetFocusTrackState(self.trackers.Focus)
+end
+
 function TrackMaster:AddHookQuestArrow()
 	local questTracker = Apollo.GetAddon("QuestTracker")
 	if questTracker ~= nil and self.hookedFunctions["QuestHintArrow"] == nil and self.hookedFunctions["QuestObjectiveHintArrow"] == nil then
@@ -557,6 +573,37 @@ function TrackMaster:SetAlpha(value)
 	self.red.a = value
 	
 	self.trackerPanel:FindChild("Opacity"):SetText("Opacity: " .. string.format("%.2f", value))
+end
+
+function TrackMaster:UpdateTrackState( wndHandler, wndControl, eMouseButton )
+	local trackName = wndHandler:GetParent():GetName():sub(6)
+	if trackName == "Focus" then
+		self:UpdateFocusTarget()
+	end
+end
+
+function TrackMaster:LockTrackState( wndHandler, wndControl, eMouseButton )
+	local trackName = wndHandler:GetName():sub(6)
+	if trackName == "Focus" then	
+		self:SetFocusTrackState(wndHandler:IsChecked())
+	end
+end
+
+function TrackMaster:SetFocusTrackState(enabled)
+	if enabled then
+		self.trackers.Focus = true
+		self:UpdateFocusTarget()
+		Apollo.RegisterEventHandler("AlternateTargetUnitChanged", "UpdateFocusTarget", self)
+	else
+		Apollo.RemoveEventHandler("AlternateTargetUnitChanged", self)
+	end
+end
+
+function TrackMaster:UpdateFocusTarget(newTarget)
+	local focusTarget = newTarget or GameLib.GetPlayerUnit():GetAlternateTarget()
+	if focusTarget ~= nil then
+		self:SetTarget(focusTarget, -1)
+	end
 end
 
 -----------------------------------------------------------------------------------------------
