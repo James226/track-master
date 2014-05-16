@@ -342,15 +342,35 @@ end
 
 function TrackMaster:AddHookQuestArrow()
 	local questTracker = Apollo.GetAddon("QuestTracker")
-	if questTracker ~= nil and self.hookedFunctions["QuestHintArrow"] == nil then
-		self.hookedFunctions["QuestHintArrow"] = Apollo.GetAddon("QuestTracker").OnQuestHintArrow
-		Apollo.GetAddon("QuestTracker").OnQuestHintArrow = function(s, wndHandler, wndControl, eMouseButton)
+	if questTracker ~= nil and self.hookedFunctions["QuestHintArrow"] == nil and self.hookedFunctions["QuestObjectiveHintArrow"] == nil then
+		self.hookedFunctions["QuestHintArrow"] = questTracker.OnQuestHintArrow
+		questTracker.OnQuestHintArrow = function(s, wndHandler, wndControl, eMouseButton)
 			local quest = wndHandler:GetData():GetData()
 			if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
 				local pos = quest:GetMapRegions()[1].tIndicator
 				self:SetTarget(Vector3.New(pos.x, pos.y, pos.z))
 			end
 			self.hookedFunctions["QuestHintArrow"](s, wndHandler, wndControl, eMouseButton)
+		end
+
+		self.hookedFunctions["QuestObjectiveHintArrow"] = questTracker.OnQuestObjectiveHintArrow
+		questTracker.OnQuestObjectiveHintArrow = function(s, wndHandler, wndControl, eMouseButton)
+			local questHolder = wndHandler:GetData()
+			
+			if questHolder and questHolder.peoObjective then
+				local quest = questHolder.peoObjective
+				if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
+					local pos = quest:GetMapRegions()[1].tIndicator
+					self:SetTarget(Vector3.New(pos.x, pos.y, pos.z))
+				end
+			elseif questHolder and questHolder.queOwner then
+				local quest = wndHandler:GetData().queOwner
+				if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
+					local pos = quest:GetMapRegions()[math.min(#quest:GetMapRegions(), wndHandler:GetData().nObjectiveIdx + 1)].tIndicator
+					self:SetTarget(Vector3.New(pos.x, pos.y, pos.z))
+				end
+			end
+			self.hookedFunctions["QuestObjectiveHintArrow"](s, wndHandler, wndControl, eMouseButton)
 		end
 	end
 end
@@ -359,6 +379,10 @@ function TrackMaster:RemoveHookQuestArrow()
 	if self.hookedFunctions["QuestHintArrow"] ~= nil then
 		Apollo.GetAddon("QuestTracker").OnQuestHintArrow = self.hookedFunctions["QuestHintArrow"]
 		self.hookedFunctions["QuestHintArrow"] = nil
+	end
+	if self.hookedFunctions["QuestObjectiveHintArrow"] ~= nil then
+		Apollo.GetAddon("QuestTracker").OnQuestObjectiveHintArrow = self.hookedFunctions["QuestObjectiveHintArrow"]
+		self.hookedFunctions["QuestObjectiveHintArrow"] = nil
 	end
 end
 
@@ -391,10 +415,13 @@ function TrackMaster:AddHookGroupFrame()
 	if groupFrame ~= nil and self.hookedFunctions["GroupPortraitClick"] == nil then
 		self.hookedFunctions["GroupPortraitClick"] = groupFrame.OnGroupPortraitClick
 		groupFrame.OnGroupPortraitClick = function(s, wndHandler, wndControl, eMouseButton)
-			local idx = wndHandler:GetData()
-			if idx and GroupLib.GetGroupMember(idx) then	
-				unitMember = GroupLib.GetUnitForGroupMember(idx)
-				
+			local tInfo = wndHandler:GetData()
+			local nMemberIdx = tInfo[1]
+			local strName = tInfo[2]
+			
+			local unitMember = GroupLib.GetUnitForGroupMember(nMemberIdx)
+
+			if nMemberIdx and unitMember then				
 				self:SetTarget(unitMember)
 			end			
 			self.hookedFunctions["GroupPortraitClick"](s, wndHandler, wndControl, eMouseButton)	
