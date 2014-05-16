@@ -31,7 +31,7 @@ function TrackMaster:new(o)
 	self.green = CColor.new(0, 1, 0, 1)
 	self.yellow = CColor.new(1, 1, 0, 1)
 	self.red = CColor.new(1, 0, 0, 1)
-	self.clearDistance = 5
+	self.clearDistance = 100
 	
 	self.hooks = {}
     return o
@@ -163,96 +163,120 @@ end
 
 function TrackMaster:OnMark()
 	self.marker = {}
-	--local origPos = GameLib.GetPlayerUnit():GetPosition()
-	--local pos = GameLib.GetPlayerUnit():GetPosition()
 	for i = 0, 20 do
 		self.marker[i] = Apollo.LoadForm("TrackMaster.xml", "Marker", "InWorldHudStratum", self)
-		if not self.marker[i]:IsOnScreen() then
-			self.marker[i]:Show(false)
-		else
-			self.marker[i]:Show(true)
-		end
-		
-		--pos.x = origPos.x + 25 * math.cos(((2 * math.pi) / 20) * i)
-		--pos.z = origPos.z + 25 * math.sin(((2 * math.pi) / 20) * i)
-		--self.marker[i]:SetWorldLocation(pos)
+		self.marker[i]:Show(true, true)
 	end
 	
 	--self.pos = GameLib.GetPlayerUnit():GetPosition()
+end
+
+function TrackMaster.GetDistanceFunction()
+	if GameLib.GetPlayerUnit() ~= nil then
+		local playerPos = GameLib.GetPlayerUnit():GetPosition()
+		local playerVec = Vector3.New(playerPos.x, playerPos.y, playerPos.z)
+		return function (target)
+			if Vector3.Is(target) then
+				return (playerVec - target):Length()
+			elseif Unit.is(target) then
+				local targetPos = target:GetPosition()
+				if targetPos == nil then
+					return 0 -- Uh, no clue
+				end
+				local targetVec = Vector3.New(targetPos.x, targetPos.y, targetPos.z)
+				return (playerVec - targetVec):Length()
+			else
+				local targetVec = Vector3.New(target.x, target.y, target.z)
+				return (playerVec - targetVec):Length()
+			end
+		end
+	else
+		return function (target)
+			return 0 -- Probably should throw an error here
+		end
+	end
 end
 
 -- on timer
 function TrackMaster:OnTimer()
 	local targetUnit = GameLib.GetTargetUnit()
 	if GameLib.GetPlayerUnit() ~= nil and (self.target ~= nil or self.hooks["Target"] and targetUnit ~= nil) then
-		local playerPos = GameLib.GetPlayerUnit():GetPosition()
-		local targetPos = nil;
+		local curTarget = nil
 		if self.target ~= nil then
-			if Vector3.Is(self.target) then
-				targetPos = self.target
-			elseif Unit.is(self.target) then
-				targetPos = self.target:GetPosition()
+			curTarget = self.target
+			if self.clearDistance ~= -1 then
+				local distanceToPlayer = TrackMaster.GetDistanceFunction()
+				local distance = distanceToPlayer(curTarget)
+				if distance > self.clearDistance then
+					self:SetTarget(nil)
+					curTarget = nil
+				end
 			end
 		end
-		
-		if targetPos == nil  then
-			if targetUnit ~= nil then
-				targetPos = targetUnit:GetPosition()
-			else
-				self:HideLine()
-				return
-			end
+		if curTarget == nil and self.hooks["Target"] and targetUnit ~= nil then
+			curTarget = targetUnit
 		end
-		
-		local distance = Vector3.New(0,0,0)
-		distance.x = targetPos.x - playerPos.x
-		distance.y = targetPos.y - playerPos.y
-		distance.z = targetPos.z - playerPos.z
-		local totalDistance = math.sqrt(distance.x * distance.x + distance.y * distance.y + distance.z * distance.z)
-		
-		
-		local color
-		
-		for i = 0, 20 do	
-			local blobDistance = totalDistance * (1/20) * i	
-			if blobDistance  <= 25 then
-				color = self.green
-			elseif blobDistance <= 35 then
-				color = self.yellow
-			else
-				color = self.red
-			end
-			self.marker[i]:SetBGColor(color)
-			self.marker[i]:SetWorldLocation(Vector3.InterpolateLinear(Vector3.New(playerPos.x, playerPos.y, playerPos.z), Vector3.New(targetPos.x, targetPos.y, targetPos.z), (1/20) * i))
-			if not self.marker[i]:IsOnScreen() then
-				self.marker[i]:Show(false)
-			else
-				self.marker[i]:Show(true)
-			end
-		end
-		
-		if self.target ~= nil and self.clearDistance ~= -1 and totalDistance < self.clearDistance then
-			self:SetTarget(nil)
+		if curTarget ~= nil then
+			self:DrawLineTo(curTarget)
+		else
+			self:HideLine()
 		end
 	else
 		self:HideLine()
 	end
+end
 
+function TrackMaster:DrawLineTo(target)
+	if GameLib.GetPlayerUnit() ~= nil then
+		local playerPos = GameLib.GetPlayerUnit():GetPosition()
+		local playerVec = Vector3.New(playerPos.x, playerPos.y, playerPos.z)
+		local targetVec = nil
+		if Vector3.Is(target) then
+			targetVec = target
+		elseif Unit.is(target) then
+			local targetPos = target:GetPosition()
+			targetVec = Vector3.New(targetPos.x, targetPos.y, targetPos.z)
+		end
+		if targetVec ~= nil then
+			local totalDistance = (playerVec - targetVec):Length()
+			local color
+			for i = 0, 20 do
+				local fraction = i/20
+				local blobDistance = totalDistance * fraction
+				if blobDistance  <= 25 then
+					color = self.green
+				elseif blobDistance <= 35 then
+					color = self.yellow
+				else
+					color = self.red
+				end
+				self.marker[i]:SetBGColor(color)
+				self.marker[i]:SetWorldLocation(Vector3.InterpolateLinear(playerVec, targetVec, fraction))
+				if not self.marker[i]:IsOnScreen() then
+					self.marker[i]:Show(false, true)
+				else
+					self.marker[i]:Show(true, true)
+				end
+			end
+		else
+			self:HideLine()
+		end
+	else
+		self:HideLine()
+	end
 end
 
 function TrackMaster:HideLine()
 	for i = 0, 20 do
-		self.marker[i]:Show(false)
+		self.marker[i]:Show(false, true)
 	end
 end
 function TrackMaster:OnMailbox()
-	local playerPos = GameLib.GetPlayerUnit():GetPosition()
+	local distanceToPlayer = TrackMaster.GetDistanceFunction()
 	local closestMailbox = nil
 	local closestMailboxDist = 0xffffff
 	for _, mailbox in pairs(self.mailboxList) do
-		local pos = mailbox:GetPosition()
-		local dist = self:CalculateDistance(Vector3.New(playerPos.x - pos.x, playerPos.y - pos.y, playerPos.z - pos.z))
-		
+		local dist = distanceToPlayer(mailbox)
 		if dist < closestMailboxDist then
 			closestMailbox = mailbox
 			closestMailboxDist = dist
@@ -260,7 +284,7 @@ function TrackMaster:OnMailbox()
 	end
 	
 	if closestMailbox ~= nil then
-		self:SetTarget(closestMailbox:GetPosition())
+		self:SetTarget(closestMailbox)
 	else
 		Print("You're a long way from a mailbox...")
 	end
@@ -287,10 +311,6 @@ function TrackMaster:OnUnitDestroyed(unit)
 	end
 end
 
-function TrackMaster:CalculateDistance(vector)
-	return math.sqrt(math.pow(vector.x, 2) + math.pow(vector.y, 2) + math.pow(vector.z, 2))
-end
-
 function TrackMaster:SetTarget(target, clearDistance)
 	if target ~= nil then
 		if Vector3.Is(target) then
@@ -308,7 +328,7 @@ function TrackMaster:SetTarget(target, clearDistance)
 	if clearDistance ~= nil then
 		self.clearDistance = clearDistance
 	else
-		self.clearDistance = 5
+		self.clearDistance = 100
 	end
 
 	self.target = target
