@@ -10,10 +10,113 @@ require "Window"
 -----------------------------------------------------------------------------------------------
 local TrackMaster = {} 
 
+local TrackLine = _G['TrackMasterLibs'].TrackLine
+local ColorPicker = _G['TrackMasterLibs'].ColorPicker
+
 -----------------------------------------------------------------------------------------------
 -- Constants
 -----------------------------------------------------------------------------------------------
--- e.g. local kiExampleVariableMax = 999
+local icons = {
+	"Icons:Arrow",
+	"AbilitiesSprites:spr_StatGolden",
+	"Rows",
+	"CRB_Basekit:kitIcon_Holo_UpArrow",
+	"CRB_MegamapSprites:sprMap_PlayerArrow",
+	"CRB_MinimapSprites:sprMM_ActiveQuestArrow",
+	"CRB_MegamapSprites:sprMap_PlayerArrowBase",
+	"CRB_MegamapSprites:sprMap_PlayerArrowSmall",
+	"CRB_MegamapSprites:sprMap_PlayerArrowNoRing",
+	"CRB_MinimapSprites:sprMM_QuestArrowActivate",
+	"CRB_MinimapSprites:sprMM_QuestArrow",
+	"CRB_PlayerPathSprites:sprPP_SciSpawnArrowUp",
+	"CRB_MinimapSprites:sprMM_ActivePathArrow",
+	"CRB_MinimapSprites:sprMM_ChallengeArrow",
+	"AbilitiesSprites:btn_CloseNormal",
+	"BK3:sprHolo_Accent_Circle",
+	"charactercreate:sprCharC_Ico_Dominion",
+	"charactercreate:sprCharC_Ico_Exile_Lrg",
+	"ClientSprites:QuestJewel_Accept",
+	"ClientSprites:QuestJewel_Incomplete_Grey",
+	"ClientSprites:QuestJewel_Offer_Grey",
+	"ClientSprites:SpellChargeEdgeGlow",
+	"ClientSprites:sprItem_New",
+	"achievements:sprAchievements_Icon_Complete",
+	"BK3:btnHolo_ExpandCollapseNormal",
+	"CM_SpellslingerSprites:sprSlinger_NodeBar_InCombatOrange",
+	"ClientSprites:sprItem_NewQuest",
+	"Crafting_CircuitSprites:sprCircuit_Line_GreenVertical",
+	"Crafting_CoordSprites:sprCoord_Direction_NE",
+	"Crafting_RunecraftingSprites:sprRunecrafting_AirFade",
+	"Crafting_RunecraftingSprites:sprRunecrafting_Fire",
+	"Crafting_RunecraftingSprites:sprRunecrafting_Life",
+	"CRB_ActionBarFrameSprites:sprResourceBar_DodgeTogglePrompt",
+	"CRB_ActionBarFrameSprites:sprResourceBar_Sprint_RunIconBlue",
+	"CRB_AMPs:btn_AMPS_CircleDisabled",
+	"CRB_Anim_DatachronSonarPing:sprAnim_Datachron_SonarPing_Red",
+	"CRB_Anim_Spinner:sprAnim_SpinnerLarge",
+	"CRB_Anim_Spinner:sprAnim_SpinnerSmall",
+	"CRB_Basekit:kitIcon_Holo_Mail",
+	"CRB_Basekit:kitIcon_New",
+	"CRB_CharacterCreateSprites:sprCC_RaceChua",
+	"CRB_ChallengeTrackerSprites:sprChallengeTypeKillLarge",
+	"CRB_ChallengeTrackerSprites:sprChallengeTypeGenericLarge",
+	"CRB_AMPs:btn_AMPS_CircleFlyby",
+	"CRB_DatachronSprites:sprDC_DarkGreenPlayRing",
+	"CRB_DatachronSprites:sprDC_GreenFlashPlayRing",
+	"CRB_DatachronSprites:sprDCPP_UplinkAnimation",
+	"CRB_GuildSprites:sprGuild_Skull",
+	"CRB_GuildSprites:sprGuild_Lopp",
+	"CRB_GuildSprites:sprGuild_Glave",
+	"CRB_HUDAlerts:sprAlert_RotateAnim3",
+	"CRB_MinimapSprites:sprMM_GhostFlashHighlight",
+	"CRB_MinimapSprites:sprMM_GhostFlash",
+	"CRB_MinimapSprites:sprMM_GhostFlashBase",
+	"CRB_MinimapSprites:sprMM_PlayerMarker",
+	"CRB_AMPs:btn_AMPS_CirclePressedFlyby",
+	"CRB_PFrameSprites:sprPF_CombatNotification",
+	"CRB_ShadowMonkSprites:sprMonkWound1",
+	"CRB_ShadowMonkSprites:sprMonkDamageMeter",
+	"CRB_ShadowMonkSprites:sprMonkWound4",
+	"PlayerPathContent_TEMP:spr_Crafting_TEMP_Stretch_QuestZonePulse",
+	"PlayerPathContent_TEMP:spr_PathExpHint",
+	"PlayerPathContent_TEMP:spr_PathSol_MapIcon",
+	"Spellslinger_TEMP:sprSpellslinger_TEMP_ActiveLarge",
+	"CRB_Basekit:kitAccent_RightArrow_Popout",
+	"CRB_CharacterCreateSprites:btnCharC_RG_ChuaDisabled",
+	"CRB_CharacterCreateSprites:btnCharC_RG_AuFDisabled",
+	"CRB_CharacterCreateSprites:btnCharC_RG_AuMNormal",
+	"CRB_CharacterCreateSprites:btnCharC_RG_DrFDisabled",
+	"CRB_CharacterCreateSprites:btnCharC_RG_DrMDisabled",
+	"CRB_CharacterCreateSprites:btnCharC_RG_GrFDisabled",
+	"CRB_CharacterCreateSprites:btnCharC_RG_GrMDisabled",
+	"CRB_CharacterCreateSprites:btnCharC_RG_HuF_DomDisabled",
+	"CRB_CharacterCreateSprites:btnCharC_RG_HuF_ExDisabled",
+	"CRB_CharacterCreateSprites:btnCharC_RG_HuM_ExNormal",
+	"CRB_CharacterCreateSprites:btnCharC_RG_HuM_DomDisabled",
+	"CRB_CharacterCreateSprites:btnCharC_RG_MeFDisabled",
+	"CRB_CharacterCreateSprites:btnCharC_RG_MeMDisabled",
+	"CRB_CharacterCreateSprites:btnCharC_RG_MoFDisabled",
+	"CRB_CharacterCreateSprites:btnCharC_RG_MoMDisabled",
+	"CRB_DatachronSprites:btnDCPP_SciBotOpenDisabled",
+	"CRB_DatachronSprites:btnDCPP_SciBotWingsFlyby",
+	"CRB_DatachronSprites:sprDC_CallSidePulseBright",
+	"CRB_DatachronSprites:sprDC_CallSidePulseBase",
+	"CRB_HousingPlacementSprites:btnYMoveUpLongPressedFlyby",
+	"CRB_HousingPlacementSprites:btnYMoveUpShortPressedFlyby",
+	"CRB_HousingPlacementSprites:btnZMoveDownShortPressedFlyby",
+	"CRB_MinimapSprites:btnMM_ToggleMapNormal",
+	"CRB_TargetFrameSprites:sprTF_PathScientist",
+	"CRB_TargetFrameSprites:sprTF_VulnFadeIn",
+	"CRB_Trading:btnTradeIncreaseLargePressed",
+	"CRB_Trading:btnTradeIncreaseSmallNormal",
+	"CRB_WarriorSprites:xxC_ImLtn",
+	"DatachronSprites:btnNewsIconFlyby",
+}
+
+TrackMaster.Type = {
+	Track = 1,
+	Hook = 2
+}
  
 -----------------------------------------------------------------------------------------------
 -- Initialization
@@ -35,24 +138,68 @@ function TrackMaster:new(o)
 	
 	self.hooks = {}
 	self.trackers = {}
+
+	self.lineBinds = {
+		hooks = {
+
+		},
+		trackers = {
+
+		}
+	}
+
+	self.Configurations = {}
+
+	self.lines = {}
+
     return o
 end
 
 function TrackMaster:Init()
     Apollo.RegisterAddon(self)
 end
- 
+
+-----------------------------------------------------------
+-- params: target - Target you wish to track, either
+--                  Vector3 or Unit object
+--         clearDistance - Distance in meters at which to
+--                         clear the tracker 
+--                         (-1 for never, nil for default)
+--         line - Line number on which to track this item
+-----------------------------------------------------------
+function TrackMaster:SetTarget(target, clearDistance, line)
+	if line == nil then
+		line = 1
+	end
+
+	if target ~= nil then
+		if Vector3.Is(target) then
+			local coord = string.format("(%d, %d, %d)", math.floor(target.x, 0.5), math.floor(target.y, 0.5), math.floor(target.z, 0.5))
+			self.trackerPanel:FindChild("Coord"):SetText(coord)
+		elseif Unit.is(target) then
+			self.trackerPanel:FindChild("Coord"):SetText(target:GetName() or "")
+		else
+			self.trackerPanel:FindChild("Coord"):SetText("")
+		end
+	else
+		self.trackerPanel:FindChild("Coord"):SetText("")
+	end
+
+	self.lines[line]:SetTarget(target, clearDistance)
+end
 
 -----------------------------------------------------------------------------------------------
 -- TrackMaster OnLoad
 -----------------------------------------------------------------------------------------------
 function TrackMaster:OnLoad()
     -- load our form file
+    self.colorPicker = ColorPicker.new()
 	self.xmlDoc = XmlDoc.CreateFromFile("TrackMaster.xml")
-	self:OnMark()
+	local mainLine = TrackLine.new(self)
+	table.insert(self.lines, mainLine)
 	self.trackerPanel = Apollo.LoadForm(self.xmlDoc, "TrackerMicroPanel", nil, self)
 	self.trackerPanel:FindChild("TrackList"):Show(false, true)
-	self.trackerPanel:FindChild("HookList"):Show(false, true)  
+	self.trackerPanel:FindChild("HookList"):Show(false, true)
 	self.trackerPanel:FindChild("Opacity"):Show(false, true)
 end
 
@@ -68,6 +215,12 @@ function TrackMaster:OnSave(eLevel)
 	saveData["Pinned"] = self.pinned
 	saveData["Alpha"] = self.alpha
 	saveData["Trackers"] = self.trackers
+	saveData["LineBinds"] = self.lineBinds
+
+	saveData.Lines = { }
+	for _, line in pairs(self.lines) do
+		table.insert(saveData.Lines, line:Save())
+	end
 	
 	
 	return saveData
@@ -104,6 +257,20 @@ function TrackMaster:OnRestore(eLevel, tData)
 		tData["Trackers"] = {}
 	end
 
+	if tData["LineBinds"] ~= nil then
+		self.lineBinds = tData["LineBinds"]
+	end
+
+	if tData.Lines ~= nil then
+		self.lines = {}
+		for _, line in pairs(tData.Lines) do
+			local l = TrackLine.new(self)
+			table.insert(self.lines, l)
+			l:Load(line)
+		end
+	end
+
+
 	
 	self.hooks["Target"] = tData["Hooks"]["Target"] == nil and true or tData["Hooks"]["Target"]
 	self.hooks["QuestHintArrow"] = tData["Hooks"]["QuestHintArrow"] == nil and true or tData["Hooks"]["QuestHintArrow"]
@@ -131,8 +298,6 @@ function TrackMaster:GetAsyncLoadStatus()
 		g_AddonsLoaded = {}
 	end
 	if not g_AddonsLoaded["QuestTracker"] and false then
-		-- replace 'WhatToLookFor' with the name of the Addon you're waiting on
-		-- and remove 'and false'
 		return Apollo.AddonLoadStatus.Loading
 	end
 
@@ -141,24 +306,48 @@ function TrackMaster:GetAsyncLoadStatus()
 		if self.wndMain == nil then
 			Apollo.AddAddonErrorText(self, "Could not load the main window for some reason.")
 			return Apollo.AddonLoadStatus.LoadingError
-		end	
-		
+		end			
 		
 	    self.wndMain:Show(false, true)	
-		
-		-- if the xmlDoc is no longer needed, you should set it to nil
-		self.xmlDoc = nil
 
 		Apollo.RegisterSlashCommand("mailbox", "OnMailbox", self)
 		
 		Apollo.RegisterSlashCommand("trackmaster", "OnShow", self)
+		Apollo.RegisterSlashCommand("tmc", "OnTrackMasterOn", self)
 		
 		Apollo.RegisterEventHandler("UnitCreated", "OnUnitCreated", self)
 		Apollo.RegisterEventHandler("UnitDestroyed", "OnUnitDestroyed", self)
 
-		self.timer = ApolloTimer.Create(0.00001, true, "OnTimer", self)
-			
-		-- Do additional Addon initialization here
+		self.timer = ApolloTimer.Create(1/60, true, "OnTimer", self)
+		self.rotationTimer = ApolloTimer.Create(1/5, true, "OnRotation", self)
+		--Apollo.RegisterEventHandler("NextFrame", "OnTimer", self)
+		
+
+		local iconPicker = self.wndMain:FindChild("IconPicker"):FindChild("IconList")
+		iconPicker:DestroyChildren()
+		for _, icon in pairs(icons) do
+			local iconButton = Apollo.LoadForm(self.xmlDoc, "TrackMasterForm.IconPicker.IconList.IconPickerButton", iconPicker, self)
+			iconButton:FindChild("Sprite"):SetSprite(icon)
+		end
+		iconPicker:ArrangeChildrenTiles()
+
+		for tracker, line in pairs(self.lineBinds.trackers) do
+			local trackerLineSelect = self.trackerPanel:FindChild("Track" .. tracker):FindChild("LineSelectButton")
+			trackerLineSelect:SetText(line)
+			trackerLineSelect:FindChild("Sample"):SetSprite(self.lines[line].Sprite)
+			trackerLineSelect:FindChild("Sample"):SetBGColor(self.lines[line].bgColor)
+		end
+
+		for hook, line in pairs(self.lineBinds.hooks) do
+			local trackerLineSelect = self.trackerPanel:FindChild("Hook" .. hook):FindChild("LineSelectButton")
+			trackerLineSelect:SetText(line)
+			trackerLineSelect:FindChild("Sample"):SetSprite(self.lines[line].Sprite)
+			trackerLineSelect:FindChild("Sample"):SetBGColor(self.lines[line].bgColor)
+		end
+
+		self:RepopulateLineList()
+		
+		self.xmlDoc = nil
 		
 		-- register our Addon so others can wait for it if they want
 		g_AddonsLoaded["TrackMaster"] = true
@@ -168,123 +357,59 @@ function TrackMaster:GetAsyncLoadStatus()
 	return Apollo.AddonLoadStatus.Loading
 end
 
+function TrackMaster:RepopulateLineList()
+	local lineList = self.wndMain:FindChild("LineList")
+	local lineSelectList = self.trackerPanel:FindChild("LineSelectDropdown"):FindChild("LineSelectList")
+	lineList:DestroyChildren()
+	lineSelectList:DestroyChildren()
+	for lineNo, line in pairs(self.lines) do
+		local lineConfig = Apollo.LoadForm("TrackMaster.xml", "TrackMasterForm.LineList.LineConfig", lineList, self)
+		lineConfig:SetData(line)
+		lineConfig:FindChild("LineTitle"):SetText("Line " .. tostring(lineNo))
+		lineConfig:FindChild("IconSelect"):FindChild("Sample"):SetSprite(line.Sprite)
+		lineConfig:FindChild("ColorSelect"):FindChild("Sample"):SetBGColor(line.bgColor)
+		lineConfig:FindChild("TrackTypeDropdown"):AddItem("Line", "", TrackLine.TrackMode.Line)
+		lineConfig:FindChild("TrackTypeDropdown"):AddItem("Circle", "", TrackLine.TrackMode.Circle)
+		lineConfig:FindChild("TrackTypeDropdown"):SelectItemByData(line.trackMode)
+		lineConfig:FindChild("Distance"):SetText(line.distance)
+		if line.trackMode == TrackLine.TrackMode.Circle then
+			lineConfig:FindChild("Distance"):Show(true, true)
+		else
+			lineConfig:FindChild("Distance"):Show(false, true)
+		end
+		if lineNo == 1 then
+			lineConfig:FindChild("DeleteButton"):Destroy()
+		end
+
+		local lineSelect = Apollo.LoadForm("TrackMaster.xml", "TrackerMicroPanel.LineSelectDropdown.LineSelectList.LineSelectButton", lineSelectList, self)
+		lineSelect:SetText(tostring(lineNo))
+		lineSelect:FindChild("Sample"):SetSprite(line.Sprite)
+		lineSelect:FindChild("Sample"):SetBGColor(line.bgColor)
+	end
+	lineList:ArrangeChildrenVert()
+	lineSelectList:ArrangeChildrenVert()
+end
+
 -----------------------------------------------------------------------------------------------
 -- TrackMaster Functions
 -----------------------------------------------------------------------------------------------
 -- Define general functions here
 
-function TrackMaster:OnMark()
-	self.marker = {}
-	for i = 0, 20 do
-		self.marker[i] = Apollo.LoadForm("TrackMaster.xml", "Marker", "InWorldHudStratum", self)
-		self.marker[i]:Show(true, true)
-	end
-	
-	--self.pos = GameLib.GetPlayerUnit():GetPosition()
-end
-
-function TrackMaster.GetDistanceFunction()
-	if GameLib.GetPlayerUnit() ~= nil then
-		local playerPos = GameLib.GetPlayerUnit():GetPosition()
-		local playerVec = Vector3.New(playerPos.x, playerPos.y, playerPos.z)
-		return function (target)
-			if Vector3.Is(target) then
-				return (playerVec - target):Length()
-			elseif Unit.is(target) then
-				local targetPos = target:GetPosition()
-				if targetPos == nil then
-					return 0 -- Uh, no clue
-				end
-				local targetVec = Vector3.New(targetPos.x, targetPos.y, targetPos.z)
-				return (playerVec - targetVec):Length()
-			else
-				local targetVec = Vector3.New(target.x, target.y, target.z)
-				return (playerVec - targetVec):Length()
-			end
-		end
-	else
-		return function (target)
-			return 0 -- Probably should throw an error here
-		end
-	end
-end
-
 -- on timer
 function TrackMaster:OnTimer()
-	local targetUnit = GameLib.GetTargetUnit()
-	if GameLib.GetPlayerUnit() ~= nil and (self.target ~= nil or self.hooks["Target"] and targetUnit ~= nil) then
-		local curTarget = nil
-		if self.target ~= nil then
-			curTarget = self.target
-			if self.clearDistance ~= -1 then
-				local distanceToPlayer = TrackMaster.GetDistanceFunction()
-				local distance = distanceToPlayer(curTarget)
-				if distance < self.clearDistance then
-					self:SetTarget(nil)
-					curTarget = nil
-				end
-			end
-		end
-		if curTarget == nil and self.hooks["Target"] and targetUnit ~= nil then
-			curTarget = targetUnit
-		end
-		if curTarget ~= nil then
-			self:DrawLineTo(curTarget)
-		else
-			self:HideLine()
-		end
-	else
-		self:HideLine()
+	for _, line in pairs(self.lines) do
+		line:Update()
 	end
 end
 
-function TrackMaster:DrawLineTo(target)
-	if GameLib.GetPlayerUnit() ~= nil then
-		local playerPos = GameLib.GetPlayerUnit():GetPosition()
-		local playerVec = Vector3.New(playerPos.x, playerPos.y, playerPos.z)
-		local targetVec = nil
-		if Vector3.Is(target) then
-			targetVec = target
-		elseif Unit.is(target) then
-			local targetPos = target:GetPosition()
-			targetVec = Vector3.New(targetPos.x, targetPos.y, targetPos.z)
-		end
-		if targetVec ~= nil then
-			local totalDistance = (playerVec - targetVec):Length()
-			local color
-			for i = 0, 20 do
-				local fraction = i/20
-				local blobDistance = totalDistance * fraction
-				if blobDistance  <= 25 then
-					color = self.green
-				elseif blobDistance <= 35 then
-					color = self.yellow
-				else
-					color = self.red
-				end
-				self.marker[i]:SetBGColor(color)
-				self.marker[i]:SetWorldLocation(Vector3.InterpolateLinear(playerVec, targetVec, fraction))
-				if not self.marker[i]:IsOnScreen() then
-					self.marker[i]:Show(false, true)
-				else
-					self.marker[i]:Show(true, true)
-				end
-			end
-		else
-			self:HideLine()
-		end
-	else
-		self:HideLine()
+function TrackMaster:OnRotation()
+	for _, line in pairs(self.lines) do
+		line:UpdateRotation()
 	end
 end
 
-function TrackMaster:HideLine()
-	for i = 0, 20 do
-		self.marker[i]:Show(false, true)
-	end
-end
 function TrackMaster:OnMailbox()
-	local distanceToPlayer = TrackMaster.GetDistanceFunction()
+	local distanceToPlayer = TrackLine.GetDistanceFunction()
 	local closestMailbox = nil
 	local closestMailboxDist = 0xffffff
 	for _, mailbox in pairs(self.mailboxList) do
@@ -296,7 +421,7 @@ function TrackMaster:OnMailbox()
 	end
 	
 	if closestMailbox ~= nil then
-		self:SetTarget(closestMailbox)
+		self:SetTarget(closestMailbox, nil, self.lineBinds.trackers.Mailbox or 1)
 	else
 		Print("You're a long way from a mailbox...")
 	end
@@ -304,7 +429,7 @@ end
 
 
 function TrackMaster:OnTrackMasterOn()
-	self.wndMain:Show(true) -- show the window
+	self.wndMain:Show(true)
 end
 
 function TrackMaster:OnUnitCreated(unit)
@@ -318,32 +443,11 @@ function TrackMaster:OnUnitDestroyed(unit)
 		self.mailboxList[unit:GetId()] = nil
 	end
 
-	if unit == self.target then
-		self:SetTarget(nil)
-	end
-end
-
-function TrackMaster:SetTarget(target, clearDistance)
-	if target ~= nil then
-		if Vector3.Is(target) then
-			local coord = string.format("(%d, %d, %d)", math.floor(target.x, 0.5), math.floor(target.y, 0.5), math.floor(target.z, 0.5))
-			self.trackerPanel:FindChild("Coord"):SetText(coord)
-		elseif Unit.is(target) then
-			self.trackerPanel:FindChild("Coord"):SetText(target:GetName() or "")
-		else
-			self.trackerPanel:FindChild("Coord"):SetText("")
+	for lineNo, line in pairs(self.lines) do
+		if unit == line.target then
+			self:SetTarget(nil, lineNo)
 		end
-	else
-		self.trackerPanel:FindChild("Coord"):SetText("")
 	end
-
-	if clearDistance ~= nil then
-		self.clearDistance = clearDistance
-	else
-		self.clearDistance = 20
-	end
-
-	self.target = target
 end
 
 function TrackMaster:UpdateHooks()
@@ -370,6 +474,13 @@ function TrackMaster:UpdateHooks()
 	else
 		self:RemoveHookRaidFrame()
 	end
+
+	if self.hooks["Target"] then
+		Print("RegisterEventHandler")
+		Apollo.RegisterEventHandler("TargetUnitChanged", "OnTargetUnitChanged", self)
+	else
+		Apollo.RemoveEventHandler("TargetUnitChanged", self)
+	end
 end
 
 function TrackMaster:UpdateTrackers()
@@ -384,7 +495,7 @@ function TrackMaster:AddHookQuestArrow()
 			local quest = wndHandler:GetData():GetData()
 			if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
 				local pos = quest:GetMapRegions()[1].tIndicator
-				self:SetTarget(Vector3.New(pos.x, pos.y, pos.z))
+				self:SetTarget(Vector3.New(pos.x, pos.y, pos.z), nil, self.lineBinds.hooks["QuestArrow"] or 1)
 			end
 			self.hookedFunctions["QuestHintArrow"](s, wndHandler, wndControl, eMouseButton)
 		end
@@ -408,7 +519,7 @@ function TrackMaster:AddHookQuestArrow()
 					else
 						pos = quest:GetMapRegions()[1].tIndicator
 					end
-					self:SetTarget(Vector3.New(pos.x, pos.y, pos.z))
+					self:SetTarget(Vector3.New(pos.x, pos.y, pos.z), nil, self.lineBinds.hooks["QuestArrow"] or 1)
 				end
 			end
 			self.hookedFunctions["QuestObjectiveHintArrow"](s, wndHandler, wndControl, eMouseButton)
@@ -437,7 +548,7 @@ function TrackMaster:AddHookZoneMap()
 				local tWorldLoc = zoneMap.wndZoneMap:GetWorldLocAtPoint(tPoint.x, tPoint.y)
 				local nLocX = math.floor(tWorldLoc.x + .5)
 				local nLocZ = math.floor(tWorldLoc.z + .5)
-				self:SetTarget(Vector3.New(nLocX, GameLib.GetPlayerUnit():GetPosition().y, nLocZ))
+				self:SetTarget(Vector3.New(nLocX, GameLib.GetPlayerUnit():GetPosition().y, nLocZ), nil, self.lineBinds.hooks["ZoneMap"] or 1)
 			end			
 			self.hookedFunctions["ZoneMapClick"](s, wndHandler, wndControl, eButton, nX, nY, bDoubleClick)
 		end
@@ -463,7 +574,7 @@ function TrackMaster:AddHookGroupFrame()
 			local unitMember = GroupLib.GetUnitForGroupMember(nMemberIdx)
 
 			if nMemberIdx and unitMember then				
-				self:SetTarget(unitMember)
+				self:SetTarget(unitMember, nil, self.lineBinds.hooks["GroupFrame"] or 1)
 			end			
 			self.hookedFunctions["GroupPortraitClick"](s, wndHandler, wndControl, eMouseButton)	
 		end
@@ -488,7 +599,7 @@ function TrackMaster:AddHookRaidFrame()
 
 			local unit = GroupLib.GetUnitForGroupMember(wndHandler:GetData())
 			if unit then
-				self:SetTarget(unit)
+				self:SetTarget(unit, nil, self.lineBinds.hooks["GroupFrame"] or 1)
 			end
 			self.hookedFunctions["RaidMemberBtnClick"](s, wndHandler, wndControl, eMouseButton)	
 		end
@@ -515,13 +626,96 @@ function TrackMaster:OnCancel()
 	self.wndMain:Show(false) -- hide the window
 end
 
+function TrackMaster:OnAddLine( wndHandler, wndControl, eMouseButton )
+	local newLine = TrackLine.new(self)
+	table.insert(self.lines, newLine)
+	self:RepopulateLineList()
+end
+
+function TrackMaster:OnIconSelect( wndHandler, wndControl, eMouseButton )
+	local iconPicker = wndHandler:GetParent():GetParent()
+	local lineConfig = iconPicker:GetData()
+	lineConfig:GetData():SetSprite(wndHandler:FindChild("Sprite"):GetSprite())
+	lineConfig:FindChild("IconSelect"):FindChild("Sample"):SetSprite(wndHandler:FindChild("Sprite"):GetSprite())
+	iconPicker:Show(false, false)
+end
+
+function TrackMaster:OnIconPicker( wndHandler, wndControl, eMouseButton )
+	local iconPicker = wndHandler:GetParent():GetParent():GetParent():FindChild("IconPicker")
+	iconPicker:SetData(wndHandler:GetParent())
+	iconPicker:Invoke()
+end
+
+function TrackMaster:OnOpenColorPicker( wndHandler, wndControl, eMouseButton )
+	local line = wndHandler:GetParent():GetData()
+	local color = line.bgColor
+	self.colorPicker:OpenColorPicker(color, function()
+		wndHandler:FindChild("Sample"):SetBGColor(color)
+		line:SetBGColor(color)
+	end)
+end
+
+function TrackMaster:OnDeleteLine( wndHandler, wndControl, eMouseButton )
+	local lineItem = wndHandler:GetParent()
+	local line = lineItem:GetData()
+
+	for id, l in pairs(self.lines) do
+		if l == line then
+			table.remove(self.lines, id)
+
+			local lineSelectList = self.trackerPanel:FindChild("LineSelectDropdown"):FindChild("LineSelectList")
+			for _, lineSelect in pairs(lineSelectList:GetChildren()) do
+				if tonumber(lineSelect:GetText()) == id then
+					lineSelect:Destroy()
+					break
+				end
+			end
+
+			for hookId, hook in pairs(self.lineBinds.hooks) do
+				if hook == tonumber(id) then
+					self.lineBinds.hooks[hookId] = nil
+				end
+			end			
+
+			for trackerId, tracker in pairs(self.lineBinds.trackers) do
+				if tracker == tonumber(id) then
+					self.lineBinds.trackers[trackerId] = nil
+				end
+			end
+		end
+	end
+	lineItem:Destroy()
+end
+
+function TrackMaster:OnTrackTypeChanged(wndHandler, wndControl, id)
+	local lineItem = wndHandler:GetParent():GetParent()
+	local line = lineItem:GetData()
+
+	if id == TrackLine.TrackMode.Circle then
+		lineItem:FindChild("Distance"):Show(true, true)
+	else
+		lineItem:FindChild("Distance"):Show(false, true)
+	end
+	
+	line:SetTrackMode(id)
+end
+
+function TrackMaster:OnDistanceChanged( wndHandler, wndControl, strText )
+	local lineItem = wndHandler:GetParent()
+	local line = lineItem:GetData()
+	local distance = tonumber(wndHandler:GetText()) or 10
+	
+	line:SetDistance(distance)
+end
 
 ---------------------------------------------------------------------------------------------------
 -- TrackerMicroPanel Functions
 ---------------------------------------------------------------------------------------------------
 
 function TrackMaster:OnClear( wndHandler, wndControl, eMouseButton )
-	self:SetTarget(nil)
+	for lineNo, line in pairs(self.lines) do
+		self:SetTarget(nil, nil, lineNo)
+	end
 end
 
 function TrackMaster:OnToggleTrackList( wndHandler, wndControl, eMouseButton )
@@ -573,6 +767,7 @@ function TrackMaster:SetAlpha(value)
 	self.red.a = value
 	
 	self.trackerPanel:FindChild("Opacity"):SetText("Opacity: " .. string.format("%.2f", value))
+	--self.wndMain:FindChild("Opacity"):SetText("Opacity: " .. string.format("%.2f", value))
 end
 
 function TrackMaster:UpdateTrackState( wndHandler, wndControl, eMouseButton )
@@ -599,11 +794,55 @@ function TrackMaster:SetFocusTrackState(enabled)
 	end
 end
 
-function TrackMaster:UpdateFocusTarget(newTarget)
-	local focusTarget = newTarget or GameLib.GetPlayerUnit():GetAlternateTarget()
-	if focusTarget ~= nil then
-		self:SetTarget(focusTarget, -1)
+local function GetAlternateTarget()
+	local playerUnit = GameLib.GetPlayerUnit()
+	if playerUnit ~= nil then
+		return playerUnit:GetAlternateTarget()
 	end
+	return nil
+end
+
+function TrackMaster:UpdateFocusTarget(newTarget)
+	local focusTarget = newTarget or GetAlternateTarget()
+	if focusTarget ~= nil then
+		self:SetTarget(focusTarget, -1, self.lineBinds.trackers.Focus or 1)
+	end
+end
+
+function TrackMaster:OnTargetUnitChanged(newTarget)
+	local target = newTarget or GameLib.GetTargetUnit()
+	self:SetTarget(target, -1, self.lineBinds.hooks.Target or 1)
+end
+
+function TrackMaster:OnLineSelect( wndHandler, wndControl, eMouseButton )
+	self:OpenLineSelectDropdown(wndHandler, function(lineNo)
+		local panelButton = wndHandler:GetParent()
+		if panelButton:GetName():sub(1, 4) == "Hook" then
+			if panelButton:GetName():sub(5) == "Target" then
+				for lineId, line in pairs(self.lines) do
+					line.trackTarget = lineId == lineNo
+				end
+			end
+			self.lineBinds.hooks[panelButton:GetName():sub(5)] = lineNo
+		else
+			self.lineBinds.trackers[panelButton:GetName():sub(6)] = lineNo
+		end
+	end)
+end
+
+function TrackMaster:OpenLineSelectDropdown(button, callback)
+	local lineSelectDropdown = self.trackerPanel:FindChild("LineSelectDropdown")
+	lineSelectDropdown:Show(true, false)
+	lineSelectDropdown:SetData({ btn = button, callback = callback })
+end
+
+function TrackMaster:OnLineSelected( wndHandler, wndControl, eMouseButton )
+	local lineSelectButton = wndHandler:GetParent():GetParent():GetData().btn
+	lineSelectButton:SetText(wndHandler:GetText())
+	lineSelectButton:FindChild("Sample"):SetSprite(wndHandler:FindChild("Sample"):GetSprite())
+	lineSelectButton:FindChild("Sample"):SetBGColor(wndHandler:FindChild("Sample"):GetBGColor())
+	wndHandler:GetParent():GetParent():Show(false, false)
+	wndHandler:GetParent():GetParent():GetData().callback(tonumber(wndHandler:GetText()))
 end
 
 -----------------------------------------------------------------------------------------------
@@ -611,3 +850,5 @@ end
 -----------------------------------------------------------------------------------------------
 local TrackMasterInst = TrackMaster:new()
 TrackMasterInst:Init()
+
+return TrackMaster

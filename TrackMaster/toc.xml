@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="Caedo" APIVersion="8" Name="TrackMaster" Description="Gives an easy way to track locations." Version="0.6.0">
+<Addon Author="Caedo" APIVersion="8" Name="TrackMaster" Description="Gives an easy way to track locations." Version="0.8.1">
+    <Script Name="ColorPicker.lua"/>
+    <Script Name="TrackLine.lua"/>
     <Script Name="TrackMaster.lua"/>
     <Form Name="TrackMaster.xml"/>
 </Addon>
