@@ -216,4 +216,12 @@
             <Event Name="ButtonSignal" Function="OnColorPickerOk"/>
         </Control>
     </Form>
+    <Form Class="Window" LAnchorPoint="0" LAnchorOffset="10" TAnchorPoint="0" TAnchorOffset="10" RAnchorPoint="0" RAnchorOffset="300" BAnchorPoint="0" BAnchorOffset="225" RelativeToClient="1" Font="Default" Text="" BGColor="UI_WindowBGDefault" TextColor="UI_WindowTextDefault" Template="Default" TooltipType="OnCursor" Name="Subwindows" Border="1" Picture="1" SwallowMouseClicks="1" Moveable="1" Escapable="1" Overlapped="1" TooltipColor="">
+        <Control Class="Button" Base="CRB_HousingSprites:btnHologramRedfill" Font="DefaultButton" ButtonType="PushButton" RadioGroup="" LAnchorPoint="0" LAnchorOffset="0" TAnchorPoint="0" TAnchorOffset="0" RAnchorPoint="1" RAnchorOffset="-10" BAnchorPoint="0" BAnchorOffset="40" DT_VCENTER="1" DT_CENTER="1" TooltipType="OnCursor" Name="ConfigButton" BGColor="ffffffff" TextColor="ffffffff" TooltipColor="" NormalTextColor="ffffffff" PressedTextColor="ffffffff" FlybyTextColor="ffffffff" PressedFlybyTextColor="ffffffff" DisabledTextColor="ffffffff" Text="Button" TextId="" Template="CRB_NormalFramedThick_StandardHdrFtr">
+            <Control Class="Button" Base="CRB_Basekit:kitBtn_Holo_Keyboard" Font="DefaultButton" ButtonType="PushButton" RadioGroup="" LAnchorPoint="0" LAnchorOffset="7" TAnchorPoint="0" TAnchorOffset="5" RAnchorPoint="0" RAnchorOffset="51" BAnchorPoint="1" BAnchorOffset="-5" DT_VCENTER="1" DT_CENTER="0" BGColor="UI_BtnBGDefault" TextColor="UI_BtnTextDefault" NormalTextColor="UI_BtnTextDefault" PressedTextColor="UI_BtnTextDefault" FlybyTextColor="UI_BtnTextDefault" PressedFlybyTextColor="UI_BtnTextDefault" DisabledTextColor="UI_BtnTextDefault" TooltipType="OnCursor" Name="LineSelectButton" TooltipColor="" Text="" TextId="CRB_1">
+                <Control Class="Window" LAnchorPoint="1" LAnchorOffset="-29" TAnchorPoint="0" TAnchorOffset="5" RAnchorPoint="1" RAnchorOffset="-7" BAnchorPoint="1" BAnchorOffset="-5" RelativeToClient="1" Font="Default" Text="" BGColor="UI_WindowBGDefault" TextColor="UI_WindowTextDefault" Template="Default" TooltipType="OnCursor" Name="Sample" TooltipColor="" IgnoreMouse="1" NewWindowDepth="1" Sprite="Icons:Arrow" Border="0" Picture="1"/>
+                <Event Name="ButtonSignal" Function="OnLineSelect"/>
+            </Control>
+        </Control>
+    </Form>
 </Forms>

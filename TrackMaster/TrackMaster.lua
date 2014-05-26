@@ -188,6 +188,61 @@ function TrackMaster:SetTarget(target, clearDistance, line)
 	self.lines[line]:SetTarget(target, clearDistance)
 end
 
+--------------------------------------------------------------------------------
+-- params: menuType - The menu which this item belongs,
+--                    see TrackMaster.Type enum
+--         name - The name for this item
+--         config - Configuration for this item, dictionary
+--                  containing one or more of the following:
+--                      CanEnable - The item can be toggled on or off (default: false)
+--                      EnabledCallback - Callback when toggle state is changed
+--                      CanFire - The item can be triggered one off (default: true)
+--                      FireCallback - Callback when item is triggered
+-- return: bool - True if config menu added, else false (check config)
+--------------------------------------------------------------------------------
+function TrackMaster:AddToConfigMenu(menuType, name, config)
+	self.SetDefaults(config)
+
+	if (menuType ~= TrackMaster.Type.Track and menuType ~= TrackMaster.Type.Hook) or
+		(name == nil or name == "") or
+		not self.ValidateConfig(config) then
+		return false
+	end
+
+	local menuName = (menuType == TrackMaster.Type.Hook) and "Hook" or "Track"
+	local menuList = self.trackerPanel:FindChild(menuName .. "List")
+	local menuItem = Apollo.LoadForm("TrackMaster.xml", "Subwindows.ConfigButton", menuList, self)
+
+	if config.CanFire and not config.CanEnable then
+		menuItem:SetContentType("PushButton")
+	else
+		menuItem:SetContentType("Check")
+		if config.CanFire then
+			menuItem:FindChild("FireButton"):Show(true, true)
+		end
+	end
+
+	self.Configurations[name] = config
+
+	return true
+end
+
+function TrackMaster.SetDefaults(config)
+	if config.CanEnable == nil then
+		config.CanEnable = false
+	end
+
+	if config.CanFire == nil then
+		config.CanFire = true
+	end
+end
+
+function TrackMaster.ValidateConfig(config)
+	return (config ~= nil and (config.CanEnable or config.CanFire)) and
+			(not config.CanEnable or config.EnableCallback ~= nil) and
+			(not config.CanFire or config.FireCallback ~= nil)
+end
+
 -----------------------------------------------------------------------------------------------
 -- TrackMaster OnLoad
 -----------------------------------------------------------------------------------------------
