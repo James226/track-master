@@ -1,5 +1,4 @@
-local LuaUnit = require('luaunit')
-local TrackMaster = require('TrackMaster')
+--local LuaUnit = require('luaunit')
 local LuaMock = require('LuaMock')
 
 test_APITests = {}
@@ -16,7 +15,7 @@ function test_APITests:setUp()
 			return form
 		end
 	end)
-	self.trackMaster = TrackMaster:new()
+	self.trackMaster = Apollo.GetAddon("TrackMaster"):new()
 	self.trackMaster:Init()
 end
 
@@ -25,50 +24,50 @@ function test_APITests:tearDown()
 end
 
 function test_APITests:testAddToConfigMenuShouldReturnTrueForValidParams()
-	assertEquals(self.trackMaster:AddToConfigMenu(TrackMaster.Type.Hook, "Test", {
+	assertEquals(self.trackMaster:AddToConfigMenu(self.trackMaster.Type.Hook, "Test", {
     	CanFire = true,
-    	FireCallback = function() end
+    	OnFire = function() end
     	}), true)
 end
 
 function test_APITests:testAddToConfigMenuShouldReturnFalseIfNoMenuTypePassed()
     assertEquals(self.trackMaster:AddToConfigMenu(nil, "Test", {
     	CanFire = true,
-    	FireCallback = function() end
+    	OnFire = function() end
     	}), false)
 end
 
 function test_APITests:testAddToConfigMenuShouldReturnFalseIfNoNamePassed()
-	assertEquals(self.trackMaster:AddToConfigMenu(TrackMaster.Type.Hook, nil, {
+	assertEquals(self.trackMaster:AddToConfigMenu(self.trackMaster.Type.Hook, nil, {
     	CanFire = true,
-    	FireCallback = function() end
+    	OnFire = function() end
     	}), false)
 end
  
 function test_APITests:testAddToConfigMenuShouldReturnFalseIfEmptyNamePassed()
-	assertEquals(self.trackMaster:AddToConfigMenu(TrackMaster.Type.Hook, "", {
+	assertEquals(self.trackMaster:AddToConfigMenu(self.trackMaster.Type.Hook, "", {
     	CanFire = true,
-    	FireCallback = function() end
+    	OnFire = function() end
     	}), false)
 end
 
 function test_APITests:testAddToConfigMenuShouldReturnFalseIfNoConfig()
-	assertEquals(self.trackMaster:AddToConfigMenu(TrackMaster.Type.Hook, "Test", {}), false)
+	assertEquals(self.trackMaster:AddToConfigMenu(self.trackMaster.Type.Hook, "Test", {}), false)
 end
 
 function test_APITests:testAddConfigMenuShouldReturnFalseIfCanFireButNoCallback()
-	assertEquals(self.trackMaster:AddToConfigMenu(TrackMaster.Type.Hook, "Test", {
+	assertEquals(self.trackMaster:AddToConfigMenu(self.trackMaster.Type.Hook, "Test", {
 		CanFire = true,
     	CanEnable = false,
-    	FireCallback = nil
+    	OnFire = nil
 	}), false)
 end
 
 function test_APITests:testAddConfigMenuShouldReturnFalseIfCanEnableButNoCallback()
-	assertEquals(self.trackMaster:AddToConfigMenu(TrackMaster.Type.Hook, "Test", {
+	assertEquals(self.trackMaster:AddToConfigMenu(self.trackMaster.Type.Hook, "Test", {
 		CanFire = false,
     	CanEnable = true,
-    	EnableCallback = nil
+    	OnEnableChanged = nil
 	}), false)
 end
 
@@ -78,19 +77,19 @@ function test_APITests:testAddToConfigMenuShouldSetContentTypeToPushButtonForCan
 		contentType = type
 	end)
 
-	self.trackMaster:AddToConfigMenu(TrackMaster.Type.Hook, "Test", {
+	self.trackMaster:AddToConfigMenu(self.trackMaster.Type.Hook, "Test", {
     	CanFire = true,
-    	FireCallback = function() end
+    	OnFire = function() end
 	})
 
 	assertEquals(contentType, "PushButton")
 end
 
 function test_APITests:testAddToConfigMenuShouldReturnTrueForCanEnableOnly()
-	assertEquals(self.trackMaster:AddToConfigMenu(TrackMaster.Type.Hook, "Test", {
+	assertEquals(self.trackMaster:AddToConfigMenu(self.trackMaster.Type.Hook, "Test", {
 		CanFire = false,
     	CanEnable = true,
-    	EnableCallback = function() end
+    	OnEnableChanged = function() end
 	}), true)
 end
 
@@ -101,21 +100,23 @@ function test_APITests:testAddToConfigMenuShouldSetContentTypeToCheckForCanEnabl
 		contentType = type
 	end)
 
-	self.trackMaster:AddToConfigMenu(TrackMaster.Type.Hook, "Test", {
+	self.trackMaster:AddToConfigMenu(self.trackMaster.Type.Hook, "Test", {
 		CanFire = false,
     	CanEnable = true,
-    	EnableCallback = function() end
+    	OnEnableChanged = function() end
 	})
 
 	assertEquals(contentType, "Check")
 end
 
 function test_APITests:testShouldStoreConfigurationIfAddToConfigMenuIsSuccessful()
-	assertEquals(self.trackMaster:AddToConfigMenu(TrackMaster.Type.Hook, "Test", {
+	assertEquals(self.trackMaster:AddToConfigMenu(self.trackMaster.Type.Hook, "Test", {
 		CanFire = false,
     	CanEnable = true,
-    	EnableCallback = function() end
+    	OnEnableChanged = function() end
 	}), true)
 
 	assert(self.trackMaster.Configurations["Test"] ~= nil)
 end
+
+Apollo.GetPackage("WildstarUT-1.0"):RegisterTestObject(test_APITests)

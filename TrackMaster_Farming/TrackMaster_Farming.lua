@@ -86,7 +86,7 @@ function TrackMaster_Farming:GetAsyncLoadStatus()
 		local numTrackers = # trackerPanel:FindChild("TrackList"):GetChildren()
 		self.trackerPanelWnd = Apollo.LoadForm(self.xmlDoc, "TrackMaster_FarmingForm", trackerPanel:FindChild("TrackList"), self)
 		self.trackerPanelWnd:FindChild("FarmingEnabledButton"):SetCheck(self.enabled)
-		self.trackerPanelWnd:ArrangeChildrenVert()
+		trackerPanel:FindChild("TrackList"):ArrangeChildrenVert()
 		self.xmlDoc = nil
 		
 		local professionIndex = {}	
@@ -139,7 +139,7 @@ function TrackMaster_Farming:OnTimer()
 		end
 		
 		if closestUnit ~= nil then
-			Apollo.GetAddon("TrackMaster"):SetTarget(closestUnit, 5)
+			Apollo.GetAddon("TrackMaster"):SetTarget(closestUnit, 5, 2)
 		end
 	end
 end
@@ -204,7 +204,9 @@ function TrackMaster_Farming:OnOpenWindow( wndHandler, wndControl, x, y )
 end
 
 function TrackMaster_Farming:OnCloseMenu( wndHandler, wndControl, x, y )
-	if not self.trackerPanelWnd:ContainsMouse() and not self.trackerPanelWnd:FindChild("MenuWindow"):ContainsMouse() then
+	if not self.trackerPanelWnd:ContainsMouse() 
+		and not self.trackerPanelWnd:FindChild("MenuWindow"):ContainsMouse()
+		and not self.trackerPanelWnd:FindChild("MenuHook"):ContainsMouse() then
 		self.trackerPanelWnd:FindChild("MenuWindow"):Show(false, false)
 	end
 end

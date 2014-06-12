@@ -141,6 +141,7 @@ end
 function TrackLine:DrawTracker(target)
 	self.isVisible = true
 	if GameLib.GetPlayerUnit() ~= nil then
+		local player = GameLib.GetPlayerUnit()
 		local playerPos = GameLib.GetPlayerUnit():GetPosition()
 		local playerVec = Vector3.New(playerPos.x, playerPos.y, playerPos.z)
 		local targetVec = nil
@@ -148,7 +149,9 @@ function TrackLine:DrawTracker(target)
 			targetVec = target
 		elseif Unit.is(target) then
 			local targetPos = target:GetPosition()
-			targetVec = Vector3.New(targetPos.x, targetPos.y, targetPos.z)
+			if targetPos then
+				targetVec = Vector3.New(targetPos.x, targetPos.y, targetPos.z)
+			end
 		end
 		if targetVec ~= nil then
 			if self.trackMode == TrackLine.TrackMode.Line then

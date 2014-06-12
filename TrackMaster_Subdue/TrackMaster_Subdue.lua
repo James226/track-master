@@ -25,6 +25,7 @@ function TrackMaster_Subdue:new(o)
 
     self.units = {}
 	self.enabled = true
+	self.lineNo = 1
 
     return o
 end
@@ -52,6 +53,7 @@ function TrackMaster_Subdue:OnSave(eLevel)
     end
 	local saveData = { }
 	saveData["Enabled"] = self.enabled
+	saveData.lineNo = self.lineNo
 	return saveData
 end
 
@@ -64,6 +66,15 @@ function TrackMaster_Subdue:OnRestore(eLevel, tData)
 		self:Enable()
 	else
 		self:Disable()
+	end
+
+	if tData.lineNo ~= nil then
+		self.lineNo = tData.lineNo
+	end
+
+	if self.tmConfig ~= nil then
+		self.tmConfig:SetEnabled(self.enabled)
+		self.tmConfig:SetLineNo(self.lineNo)
 	end
 end
 
@@ -81,11 +92,23 @@ function TrackMaster_Subdue:GetAsyncLoadStatus()
 	end
 
 	if self.xmlDoc:IsLoaded() then
-		local trackerPanel = Apollo.GetAddon("TrackMaster").trackerPanel
-		
-		self.trackerPanelWnd = Apollo.LoadForm(self.xmlDoc, "TrackMaster_Subdue", trackerPanel:FindChild("TrackList"), self)
-		self.trackerPanelWnd:FindChild("SubdueEnabledButton"):SetCheck(self.enabled)
-		trackerPanel:FindChild("TrackList"):ArrangeChildrenVert()
+		local trackMaster = Apollo.GetAddon("TrackMaster")
+		self.tmConfig = trackMaster:AddToConfigMenu(trackMaster.Type.Track, "Subdue", {
+			CanFire = false,
+			CanEnable = true,
+			IsChecked = self.enabled,
+			OnEnableChanged = (function(isEnabled)
+				if isEnabled then
+					self:Enable()
+				else
+					self:Disable()
+				end
+			end),
+			LineNo = self.lineNo,
+			OnLineChanged = (function(lineNo)
+				self.lineNo = lineNo
+			end)
+		})
 		self.xmlDoc = nil
 		
 		-- register our Addon so others can wait for it if they want
@@ -110,7 +133,7 @@ function TrackMaster_Subdue:OnUnitCreated(unit)
 	if unit:GetType() == "Pickup" then
 		local playerName = GameLib.GetPlayerUnit():GetName();
 		if string.sub(unit:GetName(), 1, string.len(playerName)) == playerName then
-			Apollo.GetAddon("TrackMaster"):SetTarget(unit, -1)
+			Apollo.GetAddon("TrackMaster"):SetTarget(unit, -1, self.lineNo)
 		end
 	end
 end

@@ -148,8 +148,6 @@ function TrackMaster:new(o)
 		}
 	}
 
-	self.Configurations = {}
-
 	self.lines = {}
 
     return o
@@ -195,12 +193,15 @@ end
 --         config - Configuration for this item, dictionary
 --                  containing one or more of the following:
 --                      CanEnable - The item can be toggled on or off (default: false)
---                      EnabledCallback - Callback when toggle state is changed
+--                      OnEnableChanged - Callback when toggle state is changed
 --                      CanFire - The item can be triggered one off (default: true)
---                      FireCallback - Callback when item is triggered
+--                      OnFire - Callback when item is triggered
+--						LineNo - Current tracker line number
+--                      OnLineChanged - Callback when the line number is changed
 -- return: bool - True if config menu added, else false (check config)
 --------------------------------------------------------------------------------
 function TrackMaster:AddToConfigMenu(menuType, name, config)
+	local returnVal = { }
 	self.SetDefaults(config)
 
 	if (menuType ~= TrackMaster.Type.Track and menuType ~= TrackMaster.Type.Hook) or
@@ -211,20 +212,49 @@ function TrackMaster:AddToConfigMenu(menuType, name, config)
 
 	local menuName = (menuType == TrackMaster.Type.Hook) and "Hook" or "Track"
 	local menuList = self.trackerPanel:FindChild(menuName .. "List")
-	local menuItem = Apollo.LoadForm("TrackMaster.xml", "Subwindows.ConfigButton", menuList, self)
+	local menuItem = nil
 
 	if config.CanFire and not config.CanEnable then
-		menuItem:SetContentType("PushButton")
+		menuItem = Apollo.LoadForm(self.xmlDoc, "Subwindows.ConfigPushButton", menuList, self)
 	else
-		menuItem:SetContentType("Check")
+		menuItem = Apollo.LoadForm(self.xmlDoc, "Subwindows.ConfigCheckButton", menuList, self)
+		menuItem:SetCheck(config.IsChecked == true)
 		if config.CanFire then
 			menuItem:FindChild("FireButton"):Show(true, true)
 		end
+
+		function returnVal:SetEnabled(isEnabled)
+			menuItem:SetCheck(isEnabled)
+		end
+	end
+	menuItem:SetData(config)
+	menuItem:SetText(name)
+	menuList:ArrangeChildrenVert()
+
+	local lineSelectButton = menuItem:FindChild("LineSelectButton")
+	if config.OnLineChanged ~= nil then
+		local lineNo = config.LineNo or 1
+		lineSelectButton:Show(true, true)
+		lineSelectButton:SetText(lineNo)
+		if self.lines[lineNo] ~= nil then
+			lineSelectButton:FindChild("Sample"):SetSprite(self.lines[lineNo].Sprite)
+			lineSelectButton:FindChild("Sample"):SetBGColor(self.lines[lineNo].bgColor)
+		end
+	else
+		lineSelectButton:Show(false, true)
 	end
 
-	self.Configurations[name] = config
+	returnVal.button = menuItem
 
-	return true
+	function returnVal:SetLineNo(lineNo)
+		lineSelectButton:SetText(lineNo)
+		if self.lines[lineNo] ~= nil then
+			lineSelectButton:FindChild("Sample"):SetSprite(self.lines[lineNo].Sprite)
+			lineSelectButton:FindChild("Sample"):SetBGColor(self.lines[lineNo].bgColor)
+		end
+	end
+
+	return returnVal
 end
 
 function TrackMaster.SetDefaults(config)
@@ -239,8 +269,8 @@ end
 
 function TrackMaster.ValidateConfig(config)
 	return (config ~= nil and (config.CanEnable or config.CanFire)) and
-			(not config.CanEnable or config.EnableCallback ~= nil) and
-			(not config.CanFire or config.FireCallback ~= nil)
+			(not config.CanEnable or config.OnEnableChanged ~= nil) and
+			(not config.CanFire or config.OnFire ~= nil)
 end
 
 -----------------------------------------------------------------------------------------------
@@ -253,8 +283,8 @@ function TrackMaster:OnLoad()
 	local mainLine = TrackLine.new(self)
 	table.insert(self.lines, mainLine)
 	self.trackerPanel = Apollo.LoadForm(self.xmlDoc, "TrackerMicroPanel", nil, self)
-	self.trackerPanel:FindChild("TrackList"):Show(false, true)
-	self.trackerPanel:FindChild("HookList"):Show(false, true)
+	self.trackerPanel:FindChild("TrackHolder"):Show(false, true)
+	self.trackerPanel:FindChild("HookHolder"):Show(false, true)
 	self.trackerPanel:FindChild("Opacity"):Show(false, true)
 end
 
@@ -387,6 +417,9 @@ function TrackMaster:GetAsyncLoadStatus()
 		iconPicker:ArrangeChildrenTiles()
 
 		for tracker, line in pairs(self.lineBinds.trackers) do
+			if self.lines[line] == nil then
+				line = 1
+			end
 			local trackerLineSelect = self.trackerPanel:FindChild("Track" .. tracker):FindChild("LineSelectButton")
 			trackerLineSelect:SetText(line)
 			trackerLineSelect:FindChild("Sample"):SetSprite(self.lines[line].Sprite)
@@ -394,15 +427,21 @@ function TrackMaster:GetAsyncLoadStatus()
 		end
 
 		for hook, line in pairs(self.lineBinds.hooks) do
-			local trackerLineSelect = self.trackerPanel:FindChild("Hook" .. hook):FindChild("LineSelectButton")
-			trackerLineSelect:SetText(line)
-			trackerLineSelect:FindChild("Sample"):SetSprite(self.lines[line].Sprite)
-			trackerLineSelect:FindChild("Sample"):SetBGColor(self.lines[line].bgColor)
+			local trackButton = self.trackerPanel:FindChild("Hook" .. hook)
+			if trackButton ~= nil then
+				if self.lines[line] == nil then
+					line = 1
+				end
+				local trackerLineSelect = trackButton:FindChild("LineSelectButton")
+				trackerLineSelect:SetText(line)
+				trackerLineSelect:FindChild("Sample"):SetSprite(self.lines[line].Sprite)
+				trackerLineSelect:FindChild("Sample"):SetBGColor(self.lines[line].bgColor)
+			end
 		end
 
 		self:RepopulateLineList()
 		
-		self.xmlDoc = nil
+		--self.xmlDoc = nil
 		
 		-- register our Addon so others can wait for it if they want
 		g_AddonsLoaded["TrackMaster"] = true
@@ -531,7 +570,6 @@ function TrackMaster:UpdateHooks()
 	end
 
 	if self.hooks["Target"] then
-		Print("RegisterEventHandler")
 		Apollo.RegisterEventHandler("TargetUnitChanged", "OnTargetUnitChanged", self)
 	else
 		Apollo.RemoveEventHandler("TargetUnitChanged", self)
@@ -574,7 +612,7 @@ function TrackMaster:AddHookQuestArrow()
 					else
 						pos = quest:GetMapRegions()[1].tIndicator
 					end
-					self:SetTarget(Vector3.New(pos.x, pos.y, pos.z), nil, self.lineBinds.hooks["QuestArrow"] or 1)
+					self:SetTarget(Vector3.New(pos.x, pos.y, pos.z), nil, self.lineBinds.hooks["QuestHintArrow"] or 1)
 				end
 			end
 			self.hookedFunctions["QuestObjectiveHintArrow"](s, wndHandler, wndControl, eMouseButton)
@@ -774,14 +812,14 @@ function TrackMaster:OnClear( wndHandler, wndControl, eMouseButton )
 end
 
 function TrackMaster:OnToggleTrackList( wndHandler, wndControl, eMouseButton )
-	self.trackerPanel:FindChild("HookList"):Show(false)
-	local trackList = self.trackerPanel:FindChild("TrackList")
+	self.trackerPanel:FindChild("HookHolder"):Show(false)
+	local trackList = self.trackerPanel:FindChild("TrackHolder")
 	trackList:Show(not trackList:IsShown())
 end
 
 function TrackMaster:OnToggleHookList( wndHandler, wndControl, eMouseButton )
-	self.trackerPanel:FindChild("TrackList"):Show(false)
-	local trackList = self.trackerPanel:FindChild("HookList")
+	self.trackerPanel:FindChild("TrackHolder"):Show(false)
+	local trackList = self.trackerPanel:FindChild("HookHolder")
 	trackList:Show(not trackList:IsShown())
 end
 
@@ -822,7 +860,6 @@ function TrackMaster:SetAlpha(value)
 	self.red.a = value
 	
 	self.trackerPanel:FindChild("Opacity"):SetText("Opacity: " .. string.format("%.2f", value))
-	--self.wndMain:FindChild("Opacity"):SetText("Opacity: " .. string.format("%.2f", value))
 end
 
 function TrackMaster:UpdateTrackState( wndHandler, wndControl, eMouseButton )
@@ -898,6 +935,37 @@ function TrackMaster:OnLineSelected( wndHandler, wndControl, eMouseButton )
 	lineSelectButton:FindChild("Sample"):SetBGColor(wndHandler:FindChild("Sample"):GetBGColor())
 	wndHandler:GetParent():GetParent():Show(false, false)
 	wndHandler:GetParent():GetParent():GetData().callback(tonumber(wndHandler:GetText()))
+end
+
+---------------------------------------------------------------------------------------------------
+-- Subwindows Functions
+---------------------------------------------------------------------------------------------------
+
+function TrackMaster:OnConfigButtonSignal( wndHandler, wndControl, eMouseButton )
+	if wndHandler == wndControl then
+		local config = wndHandler:GetData()
+		if config ~= nil then
+			config.OnFire()
+		end
+	end
+end
+
+function TrackMaster:OnConfigButtonChange( wndHandler, wndControl, eMouseButton )
+	if wndHandler == wndControl then
+		local config = wndHandler:GetData()
+		if config ~= nil then
+			config.OnEnableChanged(wndHandler:IsChecked())
+		end
+	end
+end
+
+function TrackMaster:OnConfigLineSelect( wndHandler, wndControl, eMouseButton )
+	if wndHandler == wndControl then
+		local config = wndHandler:GetParent():GetData()
+		if config ~= nil then
+			self:OpenLineSelectDropdown(wndHandler, config.OnLineChanged)
+		end
+	end
 end
 
 -----------------------------------------------------------------------------------------------
