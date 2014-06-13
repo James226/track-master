@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Addon Author="Caedo" APIVersion="8" Name="TrackMaster" Description="Gives an easy way to track locations." Version="0.8.5">
     <Script Name="Libs/WildstarUT.lua"/>
+	<Script Name="Tests/APITests.lua"/>
     <Script Name="ColorPicker.lua"/>
     <Script Name="TrackLine.lua"/>
     <Script Name="TrackMaster.lua"/>

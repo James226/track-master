@@ -154,7 +154,7 @@ local function orderedNext(t, state)
 	-- keys in the alphabetic order. We use a temporary ordered key table that
 	-- is stored in the table being iterated.
 
-    --print("orderedNext: state = "..tostring(state) )
+    --Print("orderedNext: state = "..tostring(state) )
     if state == nil then
         -- the first time, generate the index
         t.__orderedIndex = __genOrderedIndex( t )
@@ -219,7 +219,7 @@ function assertEquals(actual, expected)
 			--else
 				errorMsg = "expected: "..wrapValue(expected)..", actual: "..wrapValue(actual)
 			--end
-			--print(errorMsg)
+			--Print(errorMsg)
 			error(errorMsg, 2)
 		end
 	end
@@ -275,15 +275,17 @@ local UnitResult = { -- class
 	verbosity = 1
 }
 	function UnitResult:displayClassName()
-		--if self.verbosity == 0 then print("") end
-		print(self.currentClassName)
+		--if self.verbosity == 0 then Print("") end
+		Print(self.currentClassName)
 	end
 
 	function UnitResult:displayTestName()
 		if self.verbosity == 0 then
-			io.stdout:write(".")
+			Print(".")
+			--io.stdout:write(".")
 		else
-			io.stdout:write(("  [%s] "):format(self.currentTestName))
+			Print(("  [%s] "):format(self.currentTestName))
+			--io.stdout:write(("  [%s] "):format(self.currentTestName))
 		end
 	end
 
@@ -291,8 +293,8 @@ local UnitResult = { -- class
 		if self.verbosity == 0 then
 			io.stdout:write("F")
 		else
-			--print(errorMsg)
-			print("", "Failed")
+			--Print(errorMsg)
+			Print("", "Failed")
 		end
 	end
 
@@ -300,26 +302,26 @@ local UnitResult = { -- class
 		if self.verbosity == 0 then
 			io.stdout:write(".")
 		else 
-			print("", "Ok")
+			Print("", "Ok")
 		end
 	end
 
 	function UnitResult:displayOneFailedTest(failure)
 		local testName, errorMsg = unpack(failure)
-		print(">>> "..testName.." failed")
-		print(errorMsg)
+		Print(">>> "..testName.." failed")
+		Print(errorMsg)
 	end
 
 	function UnitResult:displayFailedTests()
 		if #self.errorList == 0 then return end
-		print("Failed tests:")
-		print("-------------")
+		Print("Failed tests:")
+		Print("-------------")
                 for i,v in ipairs(self.errorList) do self.displayOneFailedTest(i, v) end
 	end
 
 	function UnitResult:displayFinalResult()
-		if self.verbosity == 0 then print("") end
-		print("=========================================================")
+		if self.verbosity == 0 then Print("") end
+		Print("=========================================================")
 		self:displayFailedTests()
 		local failurePercent, successCount
 		if self.testCount == 0 then
@@ -328,7 +330,7 @@ local UnitResult = { -- class
 			failurePercent = 100 * self.failureCount / self.testCount
 		end
 		local successCount = self.testCount - self.failureCount
-		print( string.format("Success : %d%% - %d / %d",
+		Print( string.format("Success : %d%% - %d / %d",
 			100-math.ceil(failurePercent), successCount, self.testCount) )
 		return self.failureCount
     end
@@ -488,16 +490,16 @@ local LuaUnit = {
 		LuaUnit:runTestMethod(methodName, classInstance, methodInstance)
 	end
 
-    function LuaUnit:runTestClassByName(aClassName)
+    function LuaUnit:runTestClassByName(aClassName, classInstance)
 		--assert("table" == type(aClassName), ("bad argument #1 to 'runTestClassByName' (string expected, got %s). Make sure you are not trying to just pass functions not part of a class."):format(type(aClassName)))
 		-- example: runTestMethodName( 'TestToto' )
-		local hasMethod, methodName, classInstance
+		local hasMethod, methodName
 		hasMethod = string.find(aClassName, ':' )
 		if hasMethod then
 			methodName = string.sub(aClassName, hasMethod+1)
 			aClassName = string.sub(aClassName,1,hasMethod-1)
 		end
-        classInstance = _G[aClassName]
+        --classInstance = _G[aClassName]
 		if "table" ~= type(classInstance) then
 			error("No such class: "..aClassName)
 		end
@@ -530,7 +532,7 @@ local LuaUnit = {
 		-- that you want to run
 		local args = {...}
 		if #args > 0 then
-                        for i, v in ipairs(args) do LuaUnit.runTestClassByName(i, v) end
+                        for i, v in ipairs(args) do LuaUnit.runTestClassByName(i, v[1], v[2]) end
 		else 
 			if argv and #argv > 1 then
 				-- Run files passed on the command line
@@ -566,8 +568,8 @@ function Lib:OnDependencyError(strDep, strError)
   return false
 end
 
-function Lib:RegisterTestObject(obj)
-	table.insert(self.testObjects, obj)
+function Lib:RegisterTestObject(name, obj)
+	table.insert(self.testObjects, { name, obj })
 end
 
 function Lib:RunAllTests()
