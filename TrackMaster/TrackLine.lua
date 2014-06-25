@@ -30,6 +30,8 @@ function TrackLine.new(trackMaster)
 	self.updateRotation = true
 	self.isVisible = false
 	self.distance = 10
+	self.distanceMarker = 2
+	self.showDistanceMarker = true
 
 	self.marker = {}
 	for i = 0, 20 do
@@ -54,8 +56,18 @@ function TrackLine:Load(saveData)
 			self:SetDistance(saveData.distance)
 		end
 
+		if saveData.showDistanceMarker ~= nil then
+			self.showDistanceMarker = saveData.showDistanceMarker
+		end
+
 		for i = 0, 20 do
-			self.marker[i]:SetSprite(self.Sprite)
+			if self.showDistanceMarker and i == self.distanceMarker then
+				self.marker[i]:FindChild("Distance"):Show(true, true)
+				self.marker[i]:FindChild("Distance"):SetTextColor(self.bgColor)
+				self.marker[i]:SetSprite("")
+			else
+				self.marker[i]:SetSprite(self.Sprite)
+			end
 		end
 		self:CacheMarkerOffsets()
 	end
@@ -67,6 +79,7 @@ function TrackLine:Save()
 	saveData.bgColor = { self.bgColor.r, self.bgColor.g, self.bgColor.b, self.bgColor.a }
 	saveData.trackMode = self.trackMode
 	saveData.distance = self.distance
+	saveData.showDistanceMarker = self.showDistanceMarker
 	return saveData
 end
 
@@ -177,7 +190,7 @@ function TrackLine:DrawLineBetween(playerVec, targetVec)
 	local totalDistance = (playerVec - targetVec):Length()
 	local color
 	for i = 0, 20 do
-		local fraction = i/20
+		local fraction = (i+1)/21
 		
 		self.marker[i]:SetWorldLocation(Vector3.InterpolateLinear(playerVec, targetVec, fraction))
 		if not self.marker[i]:IsOnScreen() then
@@ -185,16 +198,21 @@ function TrackLine:DrawLineBetween(playerVec, targetVec)
 		else
 			self.marker[i]:Show(true, true)
 
-			local blobDistance = totalDistance * fraction
-			if blobDistance  <= 25 then
-				color = self.bgColor
-			elseif blobDistance <= 35 then
-				color = self.intermediateColor
+			if self.showDistanceMarker and i == self.distanceMarker then
+				self.marker[i]:FindChild("Distance"):SetText(string.format("%i", totalDistance))
 			else
-				color = self.complementaryColor
+				local blobDistance = totalDistance * fraction
+				if blobDistance  <= 25 then
+					color = self.bgColor
+				elseif blobDistance <= 35 then
+					color = self.intermediateColor
+				else
+					color = self.complementaryColor
+				end
+
+				self.marker[i]:SetBGColor(color)
+				self.marker[i]:SetRotation(self.rotation)
 			end
-			self.marker[i]:SetBGColor(color)
-			self.marker[i]:SetRotation(self.rotation)
 		end
 	end
 end
@@ -259,6 +277,7 @@ function TrackLine:SetBGColor(color)
 	self.bgColor = color
 	self.intermediateColor = self.trackMaster.colorPicker:GetComplementaryOffset(self.bgColor)
 	self.complementaryColor = self.trackMaster.colorPicker:GetComplementary(self.bgColor)
+	self.marker[self.distanceMarker]:FindChild("Distance"):SetTextColor(color)
 end
 
 function TrackLine:SetTrackMode(mode)
@@ -269,6 +288,20 @@ end
 function TrackLine:SetDistance(distance)
 	self.distance = distance
 	self:CacheMarkerOffsets()
+end
+
+function TrackLine:SetShowDistanceMarker(isShown)
+	self.showDistanceMarker = isShown
+
+	if self.showDistanceMarker then
+		self.marker[self.distanceMarker]:FindChild("Distance"):Show(true, true)
+		self.marker[self.distanceMarker]:FindChild("Distance"):SetTextColor(self.bgColor)
+		self.marker[self.distanceMarker]:SetSprite("")
+		self.marker[self.distanceMarker]:SetRotation(0)
+	else
+		self.marker[self.distanceMarker]:SetSprite(self.Sprite)
+		self.marker[self.distanceMarker]:FindChild("Distance"):Show(false, true)
+	end
 end
 
 if _G["TrackMasterLibs"] == nil then

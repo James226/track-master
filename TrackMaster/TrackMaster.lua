@@ -9,6 +9,7 @@ require "Window"
 -- TrackMaster Module Definition
 -----------------------------------------------------------------------------------------------
 local TrackMaster = {} 
+TrackMaster .__index = TrackMaster
 
 local TrackLine = _G['TrackMasterLibs'].TrackLine
 local ColorPicker = _G['TrackMasterLibs'].ColorPicker
@@ -126,6 +127,20 @@ function TrackMaster:new(o)
     setmetatable(o, self)
     self.__index = self 
 
+	o:Initialize()
+
+    return o
+end
+
+function TrackMaster.new()
+    o = setmetatable({}, TrackMaster)
+
+	o:Initialize()
+
+    return o
+end
+
+function TrackMaster:Initialize()
 	self.mailboxList = {}
 	self.hookedFunctions = {}
 	self.target = nil
@@ -149,12 +164,10 @@ function TrackMaster:new(o)
 	}
 
 	self.lines = {}
-
-    return o
 end
 
 function TrackMaster:Init()
-    Apollo.RegisterAddon(self)
+    Apollo.RegisterAddon(self, false, "", {"Lib:Assert-1.0", "Lib:Busted-2.0"})
 end
 
 -----------------------------------------------------------
@@ -286,6 +299,9 @@ function TrackMaster:OnLoad()
 	self.trackerPanel:FindChild("TrackHolder"):Show(false, true)
 	self.trackerPanel:FindChild("HookHolder"):Show(false, true)
 	self.trackerPanel:FindChild("Opacity"):Show(false, true)
+
+	self.tests = {}
+	Apollo.GetPackage("Lib:Busted-2.0").tPackage:Register(self.tests)
 end
 
 function TrackMaster:OnSave(eLevel)
@@ -305,8 +321,7 @@ function TrackMaster:OnSave(eLevel)
 	saveData.Lines = { }
 	for _, line in pairs(self.lines) do
 		table.insert(saveData.Lines, line:Save())
-	end
-	
+	end	
 	
 	return saveData
 end
@@ -398,6 +413,7 @@ function TrackMaster:GetAsyncLoadStatus()
 		Apollo.RegisterSlashCommand("mailbox", "OnMailbox", self)
 		
 		Apollo.RegisterSlashCommand("trackmaster", "OnShow", self)
+		Apollo.RegisterSlashCommand("tm", "OnShow", self)
 		Apollo.RegisterSlashCommand("tmc", "OnTrackMasterOn", self)
 		
 		Apollo.RegisterEventHandler("UnitCreated", "OnUnitCreated", self)
@@ -466,6 +482,7 @@ function TrackMaster:RepopulateLineList()
 		lineConfig:FindChild("TrackTypeDropdown"):AddItem("Circle", "", TrackLine.TrackMode.Circle)
 		lineConfig:FindChild("TrackTypeDropdown"):SelectItemByData(line.trackMode)
 		lineConfig:FindChild("Distance"):SetText(line.distance)
+		lineConfig:FindChild("ShowDistanceMarker"):SetCheck(line.showDistanceMarker)
 		if line.trackMode == TrackLine.TrackMode.Circle then
 			lineConfig:FindChild("Distance"):Show(true, true)
 		else
@@ -537,7 +554,7 @@ function TrackMaster:OnUnitDestroyed(unit)
 		self.mailboxList[unit:GetId()] = nil
 	end
 
-	for lineNo, line in pairs(self.lines) do
+	for lineNo, line in pairs(self.lines) do Apollo.RegisterAddon(self, false, "", {"Lib:Assert-1.0", "Lib:Busted-2.0"})
 		if unit == line.target then
 			self:SetTarget(nil, lineNo)
 		end
@@ -581,7 +598,7 @@ function TrackMaster:UpdateTrackers()
 end
 
 function TrackMaster:AddHookQuestArrow()
-	local questTracker = Apollo.GetAddon("QuestTracker")
+	local questTracker = Apollo.GetAddon("QuestTracker") or Apollo.GetAddon("AutoQuestTracker")
 	if questTracker ~= nil and self.hookedFunctions["QuestHintArrow"] == nil and self.hookedFunctions["QuestObjectiveHintArrow"] == nil then
 		self.hookedFunctions["QuestHintArrow"] = questTracker.OnQuestHintArrow
 		questTracker.OnQuestHintArrow = function(s, wndHandler, wndControl, eMouseButton)
@@ -621,12 +638,13 @@ function TrackMaster:AddHookQuestArrow()
 end
 
 function TrackMaster:RemoveHookQuestArrow()
+	local questTracker = Apollo.GetAddon("QuestTracker") or Apollo.GetAddon("AutoQuestTracker")
 	if self.hookedFunctions["QuestHintArrow"] ~= nil then
-		Apollo.GetAddon("QuestTracker").OnQuestHintArrow = self.hookedFunctions["QuestHintArrow"]
+		questTracker.OnQuestHintArrow = self.hookedFunctions["QuestHintArrow"]
 		self.hookedFunctions["QuestHintArrow"] = nil
 	end
 	if self.hookedFunctions["QuestObjectiveHintArrow"] ~= nil then
-		Apollo.GetAddon("QuestTracker").OnQuestObjectiveHintArrow = self.hookedFunctions["QuestObjectiveHintArrow"]
+		questTracker.OnQuestObjectiveHintArrow = self.hookedFunctions["QuestObjectiveHintArrow"]
 		self.hookedFunctions["QuestObjectiveHintArrow"] = nil
 	end
 end
@@ -801,6 +819,14 @@ function TrackMaster:OnDistanceChanged( wndHandler, wndControl, strText )
 	line:SetDistance(distance)
 end
 
+function TrackMaster:OnShowDistanceMarkerChanged( wndHandler, wndControl, eMouseButton )
+	local lineItem = wndHandler:GetParent()
+	local line = lineItem:GetData()
+	local distance = tonumber(wndHandler:GetText()) or 10
+	
+	line:SetShowDistanceMarker(wndHandler:IsChecked())
+end
+
 ---------------------------------------------------------------------------------------------------
 -- TrackerMicroPanel Functions
 ---------------------------------------------------------------------------------------------------
@@ -828,8 +854,14 @@ function TrackMaster:UpdateHookState( wndHandler, wndControl, eMouseButton )
 	self:UpdateHooks()
 end
 
-function TrackMaster:OnShow()
-	self.trackerPanel:Show(true)
+function TrackMaster:OnShow(cmd, args)
+	if args:lower():sub(1, 5) == "clear" then
+		self:OnClear()
+	elseif args:lower():sub(1, 8) == "runtests" then
+		self.tests:RunTests()
+	else
+		self.trackerPanel:Show(true)
+	end
 end
 
 function TrackMaster:OnClose( wndHandler, wndControl, eMouseButton )
