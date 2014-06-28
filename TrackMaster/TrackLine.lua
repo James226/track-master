@@ -1,7 +1,6 @@
 require "Window"
 
 local TrackLine  = {} 
-TrackLine .__index = TrackLine
 
 setmetatable(TrackLine, {
   __call = function (cls, ...)
@@ -15,7 +14,7 @@ TrackLine.TrackMode = {
 }
 
 function TrackLine.new(trackMaster)
-	local self = setmetatable({}, TrackLine)
+	local self = setmetatable({}, { __index = TrackLine })
 	self.trackMaster = trackMaster
 
 	self.bgColor = CColor.new(0,1,0,1)
@@ -32,6 +31,12 @@ function TrackLine.new(trackMaster)
 	self.distance = 10
 	self.distanceMarker = 2
 	self.showDistanceMarker = true
+
+	self.history = _G["TrackMasterLibs"]["TrackHistory"].new()
+
+	self.history:RegisterCallback(function(target)
+		self.target = target
+	end)
 
 	self.marker = {}
 	for i = 0, 20 do
@@ -100,6 +105,14 @@ function TrackLine:SetTarget(target, clearDistance)
 	self.target = target
 end
 
+function TrackLine:AddTarget(target, clearDistance)
+	self.history:AddTarget(target)
+end
+
+function TrackLine:RemoveTarget(target)
+	self.history:RemoveTarget(target)
+end
+
 function TrackLine.GetDistanceFunction()
 	if GameLib.GetPlayerUnit() ~= nil then
 		local playerPos = GameLib.GetPlayerUnit():GetPosition()
@@ -127,7 +140,12 @@ function TrackLine.GetDistanceFunction()
 end
 
 function TrackLine:Update()
-	local targetUnit = GameLib.GetTargetUnit()
+	self.history:Update()
+	
+	self:UpdateLine()
+end
+
+function TrackLine:UpdateLine()
 	if GameLib.GetPlayerUnit() ~= nil and self.target ~= nil then
 		local curTarget = nil
 		if self.target ~= nil then

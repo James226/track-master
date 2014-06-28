@@ -1,4 +1,4 @@
-local MAJOR,MINOR = "Lib:Busted-2.0", 1
+local MAJOR,MINOR = "Lib:Busted-2.0", 3
 -- Get a reference to the package information if any
 local APkg = Apollo.GetPackage(MAJOR)
 -- If there was an older version loaded we need to see if this is newer
@@ -14,7 +14,7 @@ local BustedTests   = setmetatable({}, { __index = function(tbl, key) tbl[key] =
 --- Olivine-Labs Say
 -------------------------------------------------------------------------------
 
-local SAY_MAJOR, SAY_MINOR = "Olivine:Say-1.0", 1
+local SAY_MAJOR, SAY_MINOR = "Olivine:Say-1.0", 2
 -- Get a reference to the package information if any
 local APkg = Apollo.GetPackage(SAY_MAJOR)
 -- Set a reference to the actual package or create an empty table
@@ -88,6 +88,7 @@ if not APkg or (APkg.nVersion or 0) < SAY_MINOR then
 
     setmetatable(s, __meta)
   end
+  function s:OnLoad() end
   Apollo.RegisterPackage(s, SAY_MAJOR, SAY_MINOR, {})
 end
 
@@ -314,7 +315,7 @@ local stub = {}
 do
   local stubfunc = function() end
 
-  function stub.new(object, key)
+  function stub.new(object, key, func)
     if object == nil and key == nil then
       -- called without arguments, create a 'blank' stub
       object = {}
@@ -323,7 +324,7 @@ do
     assert(type(object) == "table" and key ~= nil, "stub.new(): Can only create stub on a table key, call with 2 params; table, key")
     assert(object[key] == nil or util.callable(object[key]), "stub.new(): The element for which to create a stub must either be callable, or be nil")
     local old_elem = object[key]    -- keep existing element (might be nil!)
-    object[key] = stubfunc          -- set the stubfunction
+    object[key] = type(func) == "function" and func or stubfunc  -- set the stubfunction
     local s = spy.on(object, key)   -- create a spy on top of the stub function
     local spy_revert = s.revert     -- keep created revert function
 
@@ -363,21 +364,21 @@ end
 --- Olivine-Labs mock
 -------------------------------------------------------------------------------
 
-local function mock(object, dostub, self, key)
+local function mock(object, dostub, func, self, key)
   local data_type = type(object)
   if data_type == "table" then
     if spy.is_spy(object) then
       -- this table is a function already wrapped as a spy, so nothing to do here
     else
       for k,v in pairs(object) do
-        object[k] = mock(v, dostub, object, k)
+        object[k] = mock(v, dostub, func, object, k)
       end
     end
   elseif data_type == "userdata" then
-    mock(getmetatable(object), dostub, self, key)
+    mock(getmetatable(object), dostub, func, self, key)
   elseif data_type == "function" then
     if dostub then
-      return stub(self, key)
+      return stub(self, key, func)
     elseif self==nil then
       return spy.new(object)
     else
@@ -2795,7 +2796,6 @@ local function outputPlainTerminal(options, busted)
     while parent and (parent.name or parent.descriptor) and
           parent.descriptor ~= 'file' do
 
-      current_context = context.parent
       table.insert(names, 1, parent.name or parent.descriptor)
       parent = busted.context.parent(parent)
     end
@@ -2879,9 +2879,8 @@ local function outputPlainTerminal(options, busted)
       successes = successes + 1
     elseif status == 'pending' then
       if not options.suppressPending then
-        pendings = pendings + 1
-        Print(pendingString)       -- needed?
-        -- io.write(pendingString) -- needed?
+        Print(pendingString)
+				pendings = pendings + 1
         table.insert(pendingInfos, {
           name = element.name,
           elementTrace = element.trace,
@@ -3109,10 +3108,15 @@ local function GetLocale()
 end
 
 local function ExecuteTests()
+  local register = busted.Register
+  busted.Register = function() end
+
   busted.publish({ 'suite', 'start' })
   busted.execute()
   busted.publish({ 'suite', 'end' })
 	busted.context.reset()
+  
+  busted.Register = register
 end
 
 local loaders = {
@@ -3300,7 +3304,7 @@ function busted:OnLoad()
     s:set('output.seconds', 'secondes')
 
     -- definitions following are not used within the 'say' namespace
-    failure_messages = {
+    self.failure_messages = {
       'Vous avez %d test(s) qui a/ont echoue(s)',
       'Vos tests ont echoue.',
       'Votre code source est mauvais et vous devrez vous sentir mal',
@@ -3310,7 +3314,7 @@ function busted:OnLoad()
       'A chaque erreur, prenez une biere',
       'Ca craint, mon pote'
     }
-    success_messages = {
+    self.success_messages = {
       'Oh yeah, tests reussis',
       'Pas grave, y\'a eu du succes',
       'C\'est du bon, mon pote. Que du bon!',
@@ -3331,7 +3335,7 @@ function busted:OnLoad()
     deferPrint = false,
   }
 
-  outputHandler = outputPlainTerminal(outputHandlerOptions, busted) -- (only choice for now)
+  local outputHandler = outputPlainTerminal(outputHandlerOptions, busted) -- (only choice for now)
 
   busted.subscribe({ 'test', 'start' }, outputHandler.testStart)
   busted.subscribe({ 'test', 'end' }, outputHandler.testEnd)
@@ -3349,9 +3353,11 @@ function busted:OnLoad()
   end
 end
 
-function busted:RunAllTests()
-  for addon, tests in pairs(BustedTests) do
-    addon:RunTests()
+if _TESTRUNNER then
+  function busted:RunAllTests()
+    for addon, tests in pairs(BustedTests) do
+      addon:RunTests()
+    end
   end
 end
 

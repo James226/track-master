@@ -199,6 +199,26 @@ function TrackMaster:SetTarget(target, clearDistance, line)
 	self.lines[line]:SetTarget(target, clearDistance)
 end
 
+function TrackMaster:AddTarget(target, line)
+	if line == nil then
+		error("No line specified for TrackMaster:AddTarget")
+	end
+
+	if target ~= nil then
+		self.lines[line]:AddTarget(target)
+	end
+end
+
+function TrackMaster:RemoveTarget(target, line)
+	if line == nil then
+		error("No line specified for TrackMaster:RemoveTarget")
+	end
+
+	if target ~= nil then
+		self.lines[line]:RemoveTarget(target)
+	end
+end
+
 --------------------------------------------------------------------------------
 -- params: menuType - The menu which this item belongs,
 --                    see TrackMaster.Type enum
@@ -554,7 +574,7 @@ function TrackMaster:OnUnitDestroyed(unit)
 		self.mailboxList[unit:GetId()] = nil
 	end
 
-	for lineNo, line in pairs(self.lines) do Apollo.RegisterAddon(self, false, "", {"Lib:Assert-1.0", "Lib:Busted-2.0"})
+	for lineNo, line in pairs(self.lines) do
 		if unit == line.target then
 			self:SetTarget(nil, lineNo)
 		end
@@ -928,14 +948,22 @@ end
 
 function TrackMaster:UpdateFocusTarget(newTarget)
 	local focusTarget = newTarget or GetAlternateTarget()
-	if focusTarget ~= nil then
-		self:SetTarget(focusTarget, -1, self.lineBinds.trackers.Focus or 1)
+	if self.currentFocus ~= focusTarget then
+		self:RemoveTarget(self.currentFocus, self.lineBinds.trackers.Focus or 1)
+		self:AddTarget(focusTarget, self.lineBinds.trackers.Focus or 1)
+
+		self.currentFocus = focusTarget
 	end
 end
 
 function TrackMaster:OnTargetUnitChanged(newTarget)
 	local target = newTarget or GameLib.GetTargetUnit()
-	self:SetTarget(target, -1, self.lineBinds.hooks.Target or 1)
+	if self.currentTarget ~= target then
+		self:RemoveTarget(self.currentTarget, self.lineBinds.hooks.Target or 1)
+		self:AddTarget(target, self.lineBinds.hooks.Target or 1)
+
+		self.currentTarget = target
+	end
 end
 
 function TrackMaster:OnLineSelect( wndHandler, wndControl, eMouseButton )
