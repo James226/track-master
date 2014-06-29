@@ -5,11 +5,13 @@
 	<Script Name="Libs/LibBusted-2.0/LibBusted-2.0.lua"/>
     <Script Name="Tests/APITests.lua"/>
     <Script Name="ColorPicker.lua"/>
+    <Script Name="Tracker.lua"/>
     <Script Name="TrackHistory.lua"/>
     <Script Name="TrackLine.lua"/>
     <Script Name="TrackMaster.lua"/>
     <Form Name="TrackMaster.xml"/>
 	<Test Name="APITests" File="Tests/BustedAPITests.lua"/>
+    <Test Name="TrackerTests" File="Tests/TrackerTests.lua"/>
 	<Test Name="TrackHistoryTests" File="Tests/TrackHistoryTests.lua"/>
     <Test Name="TrackLineTests" File="Tests/TrackLineTests.lua"/>
     <Test Name="TrackMasterTests" File="Tests/TrackMasterTests.lua"/>

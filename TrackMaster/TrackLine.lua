@@ -32,6 +32,7 @@ function TrackLine.new(trackMaster)
 	self.distanceMarker = 2
 	self.showDistanceMarker = true
 
+	self.trackers = {}
 	self.history = _G["TrackMasterLibs"]["TrackHistory"].new()
 
 	self.history:RegisterCallback(function(target)
@@ -113,6 +114,25 @@ function TrackLine:RemoveTarget(target)
 	self.history:RemoveTarget(target)
 end
 
+local function indexOf(table, item)
+	for key, value in pairs(table) do
+		if (item == value) then
+			return key
+		end
+	end
+end
+
+function TrackLine:AddTracker(tracker)
+	if not indexOf(self.trackers, tracker) then
+		table.insert(self.trackers, tracker)
+	end
+end
+
+function TrackLine:RemoveTracker(tracker)
+	local trackerIndex = indexOf(self.trackers, tracker)
+	table.remove(self.trackers, trackerIndex)
+end
+
 function TrackLine.GetDistanceFunction()
 	if GameLib.GetPlayerUnit() ~= nil then
 		local playerPos = GameLib.GetPlayerUnit():GetPosition()
@@ -140,9 +160,25 @@ function TrackLine.GetDistanceFunction()
 end
 
 function TrackLine:Update()
-	self.history:Update()
-	
+	--self.history:Update()
+
+	self:UpdateTarget()
+
 	self:UpdateLine()
+end
+
+function TrackLine:UpdateTarget()
+	local distanceFunc = TrackLine.GetDistanceFunction()
+
+	local closestTarget, closestDistance
+	for _, tracker in pairs(self.trackers) do
+		local target = tracker:GetTarget(distanceFunc)
+		if not closestTarget or distanceFunc(target) < closestDistance then
+			closestTarget = target
+			closestDistance = distanceFunc(target)
+		end
+	end
+	self.target = closestTarget
 end
 
 function TrackLine:UpdateLine()

@@ -199,6 +199,10 @@ function TrackMaster:SetTarget(target, clearDistance, line)
 	self.lines[line]:SetTarget(target, clearDistance)
 end
 
+function TrackMaster:RegisterTracker()
+	return _G['TrackMasterLibs']['Tracker'].new(self)
+end
+
 function TrackMaster:AddTarget(target, line)
 	if line == nil then
 		error("No line specified for TrackMaster:AddTarget")
@@ -315,6 +319,12 @@ function TrackMaster:OnLoad()
 	self.xmlDoc = XmlDoc.CreateFromFile("TrackMaster.xml")
 	local mainLine = TrackLine.new(self)
 	table.insert(self.lines, mainLine)
+
+	self.trackerList = {
+		Target = self:RegisterTracker(),
+		Focus = self:RegisterTracker()
+	}
+	
 	self.trackerPanel = Apollo.LoadForm(self.xmlDoc, "TrackerMicroPanel", nil, self)
 	self.trackerPanel:FindChild("TrackHolder"):Show(false, true)
 	self.trackerPanel:FindChild("HookHolder"):Show(false, true)
@@ -578,6 +588,7 @@ function TrackMaster:OnUnitDestroyed(unit)
 		if unit == line.target then
 			self:SetTarget(nil, lineNo)
 		end
+		line:RemoveTarget(unit)
 	end
 end
 
@@ -949,8 +960,8 @@ end
 function TrackMaster:UpdateFocusTarget(newTarget)
 	local focusTarget = newTarget or GetAlternateTarget()
 	if self.currentFocus ~= focusTarget then
-		self:RemoveTarget(self.currentFocus, self.lineBinds.trackers.Focus or 1)
-		self:AddTarget(focusTarget, self.lineBinds.trackers.Focus or 1)
+		self.trackerList.Focus:RemoveTarget(self.currentFocus)
+		self.trackerList.Focus:AddTarget(focusTarget)
 
 		self.currentFocus = focusTarget
 	end
@@ -959,8 +970,8 @@ end
 function TrackMaster:OnTargetUnitChanged(newTarget)
 	local target = newTarget or GameLib.GetTargetUnit()
 	if self.currentTarget ~= target then
-		self:RemoveTarget(self.currentTarget, self.lineBinds.hooks.Target or 1)
-		self:AddTarget(target, self.lineBinds.hooks.Target or 1)
+		self.trackerList.Target:RemoveTarget(self.currentTarget)
+		self.trackerList.Target:AddTarget(target)
 
 		self.currentTarget = target
 	end

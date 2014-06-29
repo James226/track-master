@@ -1,0 +1,79 @@
+require "Window"
+
+local TrackHistory  = {} 
+
+function TrackHistory.new()
+	local self = setmetatable({}, { __index = TrackHistory })
+
+	self.targets = {}
+
+	return self
+end
+
+local function indexOf(table, item)
+	for key, value in pairs(table) do
+		if (item == value) then
+			return key
+		end
+	end
+end
+
+function TrackHistory:RegisterCallback(callback)
+	self.callback = callback
+end
+
+local function GetDistanceToTarget(playerVec, target)
+	if Vector3.Is(target) then
+		return (playerVec - target):Length()
+	elseif Unit.is(target) then
+		local targetPos = target:GetPosition()
+		if targetPos == nil then
+			return 0 -- Uh, no clue
+		end
+		local targetVec = Vector3.New(targetPos.x, targetPos.y, targetPos.z)
+		return (playerVec - targetVec):Length()
+	else
+		local targetVec = Vector3.New(target.x, target.y, target.z)
+		return (playerVec - targetVec):Length()
+	end
+end
+
+function TrackHistory:Update()
+	if self.callback ~= nil then
+		local closestTarget = nil
+		local closestDistance = nil
+		local playerUnit = GameLib.GetPlayerUnit()
+
+		if playerUnit ~= nil then
+			local playerPos = playerUnit:GetPosition()
+			local playerVec = Vector3.New(playerPos.x, playerPos.y, playerPos.z)
+
+			for _, target in pairs(self.targets) do
+				local distance = GetDistanceToTarget(playerVec, target)
+				if not closestTarget or distance < closestDistance then
+					closestTarget = target
+					closestDistance = distance
+				end
+			end
+		end
+		self.callback(closestTarget)
+	end
+end
+
+function TrackHistory:AddTarget(target)
+	if indexOf(self.targets, target) == nil then
+		table.insert(self.targets, target)
+	end
+end
+
+function TrackHistory:RemoveTarget(target)
+	local index = indexOf(self.targets, target)
+	if index ~= nil then
+		table.remove(self.targets, index)
+	end
+end
+
+if _G["TrackMasterLibs"] == nil then
+	_G["TrackMasterLibs"] = {}
+end
+_G["TrackMasterLibs"].TrackHistory = TrackHistory
