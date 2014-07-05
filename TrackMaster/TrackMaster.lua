@@ -203,26 +203,6 @@ function TrackMaster:RegisterTracker()
 	return _G['TrackMasterLibs']['Tracker'].new(self)
 end
 
-function TrackMaster:AddTarget(target, line)
-	if line == nil then
-		error("No line specified for TrackMaster:AddTarget")
-	end
-
-	if target ~= nil then
-		self.lines[line]:AddTarget(target)
-	end
-end
-
-function TrackMaster:RemoveTarget(target, line)
-	if line == nil then
-		error("No line specified for TrackMaster:RemoveTarget")
-	end
-
-	if target ~= nil then
-		self.lines[line]:RemoveTarget(target)
-	end
-end
-
 --------------------------------------------------------------------------------
 -- params: menuType - The menu which this item belongs,
 --                    see TrackMaster.Type enum
@@ -322,7 +302,10 @@ function TrackMaster:OnLoad()
 
 	self.trackerList = {
 		Target = self:RegisterTracker(),
-		Focus = self:RegisterTracker()
+		Focus = self:RegisterTracker(),
+		QuestArrow = self:RegisterTracker(),
+		ZoneMap = self:RegisterTracker(),
+		GroupFrame = self:RegisterTracker()
 	}
 	
 	self.trackerPanel = Apollo.LoadForm(self.xmlDoc, "TrackerMicroPanel", nil, self)
@@ -392,10 +375,14 @@ function TrackMaster:OnRestore(eLevel, tData)
 	end
 
 	if tData.Lines ~= nil then
-		self.lines = {}
-		for _, line in pairs(tData.Lines) do
-			local l = TrackLine.new(self)
-			table.insert(self.lines, l)
+		for lineNo, line in pairs(tData.Lines) do
+			local l = nil
+			if lineNo ~= 1 then
+				l = TrackLine.new(self)
+				table.insert(self.lines, l)	
+			else
+				l = self.lines[1]
+			end
 			l:Load(line)
 		end
 	end
@@ -588,7 +575,10 @@ function TrackMaster:OnUnitDestroyed(unit)
 		if unit == line.target then
 			self:SetTarget(nil, lineNo)
 		end
-		line:RemoveTarget(unit)
+	end
+
+	for _, tracker in pairs(self.trackerList) do
+		tracker:RemoveTarget(unit)
 	end
 end
 
@@ -633,39 +623,47 @@ function TrackMaster:AddHookQuestArrow()
 	if questTracker ~= nil and self.hookedFunctions["QuestHintArrow"] == nil and self.hookedFunctions["QuestObjectiveHintArrow"] == nil then
 		self.hookedFunctions["QuestHintArrow"] = questTracker.OnQuestHintArrow
 		questTracker.OnQuestHintArrow = function(s, wndHandler, wndControl, eMouseButton)
-			local quest = wndHandler:GetData():GetData()
-			if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
-				local pos = quest:GetMapRegions()[1].tIndicator
-				self:SetTarget(Vector3.New(pos.x, pos.y, pos.z), nil, self.lineBinds.hooks["QuestArrow"] or 1)
-			end
-			self.hookedFunctions["QuestHintArrow"](s, wndHandler, wndControl, eMouseButton)
+			self:QuestHintArrow(s, wndHandler, wndControl, eMouseButton)
 		end
 
 		self.hookedFunctions["QuestObjectiveHintArrow"] = questTracker.OnQuestObjectiveHintArrow
 		questTracker.OnQuestObjectiveHintArrow = function(s, wndHandler, wndControl, eMouseButton)
-			local questHolder = wndHandler:GetData()
-			
-			if questHolder and questHolder.peoObjective then
-				local quest = questHolder.peoObjective
-				if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
-					local pos = quest:GetMapRegions()[1].tIndicator
-					self:SetTarget(Vector3.New(pos.x, pos.y, pos.z))
-				end
-			elseif questHolder and questHolder.queOwner then
-				local quest = wndHandler:GetData().queOwner
-				if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
-					local pos = nil
-					if wndHandler:GetData().nObjectiveIdx ~= nil then
-						pos = quest:GetMapRegions()[math.min(#quest:GetMapRegions(), wndHandler:GetData().nObjectiveIdx + 1)].tIndicator
-					else
-						pos = quest:GetMapRegions()[1].tIndicator
-					end
-					self:SetTarget(Vector3.New(pos.x, pos.y, pos.z), nil, self.lineBinds.hooks["QuestHintArrow"] or 1)
-				end
-			end
-			self.hookedFunctions["QuestObjectiveHintArrow"](s, wndHandler, wndControl, eMouseButton)
+			self:QuestObjectiveHintArrow(s, wndHandler, wndControl, eMouseButton)
 		end
 	end
+end
+
+function TrackMaster:QuestHintArrow(s, wndHandler, wndControl, eMouseButton)
+	local quest = wndHandler:GetData():GetData()
+	if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
+		local pos = quest:GetMapRegions()[1].tIndicator
+		self.trackerList.QuestArrow:AddTarget(Vector3.New(pos.x, pos.y, pos.z))
+	end
+	self.hookedFunctions["QuestHintArrow"](s, wndHandler, wndControl, eMouseButton)
+end
+
+function TrackMaster:QuestObjectiveHintArrow(s, wndHandler, wndControl, eMouseButton)
+	local questHolder = wndHandler:GetData()
+	
+	if questHolder and questHolder.peoObjective then
+		local quest = questHolder.peoObjective
+		if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
+			local pos = quest:GetMapRegions()[1].tIndicator
+			self.trackerList.QuestArrow:AddTarget(Vector3.New(pos.x, pos.y, pos.z))
+		end
+	elseif questHolder and questHolder.queOwner then
+		local quest = wndHandler:GetData().queOwner
+		if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
+			local pos = nil
+			if wndHandler:GetData().nObjectiveIdx ~= nil then
+				pos = quest:GetMapRegions()[math.min(#quest:GetMapRegions(), wndHandler:GetData().nObjectiveIdx + 1)].tIndicator
+			else
+				pos = quest:GetMapRegions()[1].tIndicator
+			end
+			self.trackerList.QuestArrow:AddTarget(Vector3.New(pos.x, pos.y, pos.z), nil, self.lineBinds.hooks["QuestHintArrow"] or 1)
+		end
+	end
+	self.hookedFunctions["QuestObjectiveHintArrow"](s, wndHandler, wndControl, eMouseButton)
 end
 
 function TrackMaster:RemoveHookQuestArrow()
@@ -690,7 +688,7 @@ function TrackMaster:AddHookZoneMap()
 				local tWorldLoc = zoneMap.wndZoneMap:GetWorldLocAtPoint(tPoint.x, tPoint.y)
 				local nLocX = math.floor(tWorldLoc.x + .5)
 				local nLocZ = math.floor(tWorldLoc.z + .5)
-				self:SetTarget(Vector3.New(nLocX, GameLib.GetPlayerUnit():GetPosition().y, nLocZ), nil, self.lineBinds.hooks["ZoneMap"] or 1)
+				--self:trackerList.ZoneMap:AddTarget(Vector3.New(nLocX, GameLib.GetPlayerUnit():GetPosition().y, nLocZ))
 			end			
 			self.hookedFunctions["ZoneMapClick"](s, wndHandler, wndControl, eButton, nX, nY, bDoubleClick)
 		end
@@ -715,8 +713,9 @@ function TrackMaster:AddHookGroupFrame()
 			
 			local unitMember = GroupLib.GetUnitForGroupMember(nMemberIdx)
 
-			if nMemberIdx and unitMember then				
-				self:SetTarget(unitMember, nil, self.lineBinds.hooks["GroupFrame"] or 1)
+			if nMemberIdx and unitMember then	
+				self.trackerList.GroupFrame:ClearAllTargets()			
+				self.trackerList.GroupFrame:AddTarget(unitMember)
 			end			
 			self.hookedFunctions["GroupPortraitClick"](s, wndHandler, wndControl, eMouseButton)	
 		end

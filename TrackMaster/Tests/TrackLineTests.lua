@@ -24,41 +24,9 @@ describe("TrackLine", function()
 	end)
 
 	before_each(function()
-		_G['TrackMasterLibs']['TrackHistory'] = mock(_G['TrackMasterLibs']['TrackHistory'])
 		trackMaster = TrackMaster.new()
-		table.insert(trackMaster.lines, trackLine)
 		trackLine = TrackLine.new({})
-	end)
-
-	after_each(function()
-		unmock(_G['TrackMasterLibs']['TrackHistory'])
-	end)
-
-	it("should set target when history callback received", function()
-		local target = {}
-		trackLine.history.callback(target)
-
-		assert.are.same(target, trackLine.target)
-	end)
-
-	describe("AddTarget", function()
-		it("should add target to history", function()
-			local target = {}
-
-			trackLine:AddTarget(target)
-
-			assert.spy(trackLine.history.AddTarget).was.called_with(trackLine.history, target)
-		end)
-	end)
-
-	describe("RemoveTarget", function()
-		it("should remove the target from history", function()
-			local target = {}
-
-			trackLine:RemoveTarget(target)
-
-			assert.spy(trackLine.history.RemoveTarget).was.called_with(trackLine.history, target)
-		end)
+		table.insert(trackMaster.lines, trackLine)
 	end)
 
 	describe("AddTracker", function()
@@ -146,6 +114,15 @@ describe("TrackLine", function()
 
 			trackLine:Update()
 			assert.is.same(target2, trackLine.target)
+		end)
+
+		it("should not throw if tracker returns nil target", function()
+			local tracker = mock(Tracker.new(), true)
+			tracker.GetTarget = function(self)
+				return nil
+			end
+			trackLine:AddTracker(tracker)
+			assert.no_error(function() trackLine:Update() end)
 		end)
 	end)
 end)

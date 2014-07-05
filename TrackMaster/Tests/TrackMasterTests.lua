@@ -39,38 +39,6 @@ describe("TrackMaster", function()
 		unmock(_G['TrackMasterLibs']['TrackLine'])
 	end)
 
-	describe("AddTarget", function()
-		it("should add target to line", function()
-			trackMaster:AddTarget(target, 1)
-			assert.spy(trackMaster.lines[1].AddTarget).was.called_with(trackMaster.lines[1], target)
-		end)
-
-		it("should throw an error if no line is specified", function()
-			assert.error(function() trackMaster:AddTarget(target, nil) end, "No line specified for TrackMaster:AddTarget")
-		end)
-
-		it("should not remove target from line if target is nil", function()
-			trackMaster:AddTarget(nil, 1)
-			assert.spy(trackMaster.lines[1].AddTarget).was.called(0)
-		end)
-	end)
-
-	describe("RemoveTarget", function()
-		it("should remove target from the line", function()
-			trackMaster:RemoveTarget(target, 1)
-			assert.spy(trackMaster.lines[1].RemoveTarget).was.called_with(trackMaster.lines[1], target)
-		end)
-
-		it("should throw an error if no line is specified", function()
-			assert.error(function() trackMaster:RemoveTarget(target, nil) end, "No line specified for TrackMaster:RemoveTarget")
-		end)
-
-		it("should not remove target from line if target is nil", function()
-			trackMaster:RemoveTarget(nil, 1)
-			assert.spy(trackMaster.lines[1].RemoveTarget).was.called(0)
-		end)
-	end)
-
 	describe("RegisterTracker", function()
 		local Tracker = _G['TrackMasterLibs']['Tracker']
 
@@ -80,6 +48,17 @@ describe("TrackMaster", function()
 			assert.are.same(Tracker, getmetatable(tracker).__index)
 		end)
 	end)
+
+	-- describe("SetTarget", function()
+	-- 	it("should add tracker if one does not exist", function()
+	-- 		local target = {}
+	-- 		function target:GetName() return "Name" end
+
+	-- 		trackMaster:SetTarget(target, -1, 1)
+
+	-- 		assert.is.same(1, # trackMaster.lines[1].trackers)
+	-- 	end)
+	-- end)
 
 	describe("Tracker:", function()
 		describe("Target", function()
@@ -126,14 +105,29 @@ describe("TrackMaster", function()
 				assert.spy(trackMaster.trackerList.Focus.RemoveTarget).was.called(1)
 			end)
 		end)
-	end)
 
-	--[[describe("SetTarget", function()
-		it("should add target to line", function()
-			local target = {}
-			trackMaster:SetTarget(target)
+		describe("Quest Arrow", function()
+			before_each(function()
+				trackMaster:AddHookQuestArrow()
+			end)
 
-			assert.spy(trackMaster.lines[1].AddTarget).was.called_with(trackMaster.lines[1], target)
+			after_each(function()
+				trackMaster:RemoveHookQuestArrow()
+			end)
+
+			it("should add position of first quest area", function()
+				--local quest = 
+				local w = {
+					GetData = function(self)
+						return {
+							GetData = function(self) end
+
+							
+						}
+					end
+				}
+				--trackMaster:QuestHintArrow
+			end)
 		end)
-	end)]]
+	end)
 end)

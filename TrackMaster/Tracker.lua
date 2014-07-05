@@ -60,6 +60,10 @@ function Tracker:RemoveTarget(target)
 	end
 end
 
+function Tracker:ClearAllTargets()
+	self.targets = {}
+end
+
 function Tracker:GetTarget()
 	local closestTarget = nil
 	local closestDistance = nil

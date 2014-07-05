@@ -1,6 +1,7 @@
 require "Window"
 
 local TrackLine  = {} 
+local Tracker = _G['TrackMasterLibs']['Tracker']
 
 setmetatable(TrackLine, {
   __call = function (cls, ...)
@@ -20,7 +21,7 @@ function TrackLine.new(trackMaster)
 	self.bgColor = CColor.new(0,1,0,1)
 	self.intermediateColor = CColor.new(0, 0, 1, 1)
 	self.complementaryColor = CColor.new(1, 0, 1, 1)
-	self.clearDistance = 20
+	self.clearDistance = 0 --20
 	self.target = nil
 	self.Sprite = "Icons:Arrow"
 	self.trackMode = TrackLine.TrackMode.Line
@@ -33,11 +34,6 @@ function TrackLine.new(trackMaster)
 	self.showDistanceMarker = true
 
 	self.trackers = {}
-	self.history = _G["TrackMasterLibs"]["TrackHistory"].new()
-
-	self.history:RegisterCallback(function(target)
-		self.target = target
-	end)
 
 	self.marker = {}
 	for i = 0, 20 do
@@ -53,7 +49,7 @@ function TrackLine:Load(saveData)
 	if saveData ~= nil then
 		self:SetBGColor(CColor.new(saveData.bgColor[1], saveData.bgColor[2], saveData.bgColor[3], saveData.bgColor[4]))
 		self.Sprite = saveData.Sprite
-
+              
 		if saveData.trackMode ~= nil then
 			self:SetTrackMode(saveData.trackMode)
 		end
@@ -103,15 +99,13 @@ function TrackLine:SetTarget(target, clearDistance)
 		self.clearDistance = 20
 	end
 
-	self.target = target
-end
+	if self.anonymousTracker == nil then
+		self.anonymousTracker = Tracker.new(self.trackmaster)
+		table.insert(self.trackers, self.anonymousTracker)
+	end
 
-function TrackLine:AddTarget(target, clearDistance)
-	self.history:AddTarget(target)
-end
-
-function TrackLine:RemoveTarget(target)
-	self.history:RemoveTarget(target)
+	self.anonymousTracker:ClearAllTargets()
+	self.anonymousTracker:AddTarget(target)
 end
 
 local function indexOf(table, item)
@@ -160,8 +154,6 @@ function TrackLine.GetDistanceFunction()
 end
 
 function TrackLine:Update()
-	--self.history:Update()
-
 	self:UpdateTarget()
 
 	self:UpdateLine()
@@ -169,11 +161,10 @@ end
 
 function TrackLine:UpdateTarget()
 	local distanceFunc = TrackLine.GetDistanceFunction()
-
 	local closestTarget, closestDistance
 	for _, tracker in pairs(self.trackers) do
 		local target = tracker:GetTarget(distanceFunc)
-		if not closestTarget or distanceFunc(target) < closestDistance then
+		if target and (not closestTarget or distanceFunc(target) < closestDistance) then
 			closestTarget = target
 			closestDistance = distanceFunc(target)
 		end
