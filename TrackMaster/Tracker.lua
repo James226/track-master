@@ -7,20 +7,42 @@ function Tracker.new(trackMaster)
 
 	self.targets = {}
 	self.trackMaster = trackMaster
+	self.lineChange = {}
+
 	if trackMaster ~= nil then
 		self:SetLine(1)
 	end
 
+
 	return self
 end
 
-function Tracker:SetLine(lineNo)
-	for lineNumber, line in pairs(self.trackMaster.lines) do
-		if lineNo ~= lineNumber then
-			line:RemoveTracker(self)
+function Tracker:Load(data)
+	if data ~= nil then
+		if data.LineNo then
+			self:SetLine(data.LineNo)
 		end
 	end
-	self.trackMaster.lines[lineNo]:AddTracker(self)
+end
+
+function Tracker:Save()
+	return {
+		LineNo = self.lineNo
+	}
+end
+
+function Tracker:SetLine(lineNo)
+	if self.lineNo ~= lineNo then
+		for lineNumber, line in pairs(self.trackMaster.lines) do
+			if lineNo ~= lineNumber then
+				line:RemoveTracker(self)
+			end
+		end
+		if self.trackMaster.lines[lineNo] ~= nil then
+			self.trackMaster.lines[lineNo]:AddTracker(self)
+		end
+		self.lineNo = lineNo
+	end
 end
 
 local function indexOf(table, item)

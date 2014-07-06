@@ -335,6 +335,11 @@ function TrackMaster:OnSave(eLevel)
 	for _, line in pairs(self.lines) do
 		table.insert(saveData.Lines, line:Save())
 	end	
+
+	saveData.trackerList = { }
+	for trackerName, tracker in pairs(self.trackerList) do
+		saveData.trackerList[trackerName] = tracker:Save()
+	end
 	
 	return saveData
 end
@@ -370,10 +375,6 @@ function TrackMaster:OnRestore(eLevel, tData)
 		tData["Trackers"] = {}
 	end
 
-	if tData["LineBinds"] ~= nil then
-		self.lineBinds = tData["LineBinds"]
-	end
-
 	if tData.Lines ~= nil then
 		for lineNo, line in pairs(tData.Lines) do
 			local l = nil
@@ -387,6 +388,18 @@ function TrackMaster:OnRestore(eLevel, tData)
 		end
 	end
 
+	if tData["LineBinds"] ~= nil then
+		self.lineBinds = tData["LineBinds"]
+		for trackerName, tracker in pairs(self.trackerList) do
+			if self.lineBinds.hooks and self.lineBinds.hooks[trackerName] ~= nil then
+				tracker:SetLine(self.lineBinds.hooks[trackerName])
+			elseif self.lineBinds.trackers and self.lineBinds.trackers[trackerName] ~= nil then
+				tracker:SetLine(self.lineBinds.trackers[trackerName])
+			end
+		end
+	end
+
+	self:OnRestoreTrackerList(tData.trackerList)
 
 	
 	self.hooks["Target"] = tData["Hooks"]["Target"] == nil and true or tData["Hooks"]["Target"]
@@ -403,6 +416,14 @@ function TrackMaster:OnRestore(eLevel, tData)
 	self.trackerPanel:FindChild("TrackFocus"):SetCheck(self.trackers["Focus"])
 	self:UpdateHooks()
 	self:UpdateTrackers()
+end
+
+function TrackMaster:OnRestoreTrackerList(trackerList)
+	for trackerName, tracker in pairs(self.trackerList) do
+		if trackerList[trackerName] ~= nil then
+			tracker:Load(trackerList[trackerName])
+		end
+	end
 end
 
 -----------------------------------------------------------------------------------------------
@@ -637,7 +658,8 @@ function TrackMaster:QuestHintArrow(s, wndHandler, wndControl, eMouseButton)
 	local quest = wndHandler:GetData():GetData()
 	if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
 		local pos = quest:GetMapRegions()[1].tIndicator
-		self.trackerList.QuestArrow:AddTarget(Vector3.New(pos.x, pos.y, pos.z))
+		self:SetTarget(Vector3.New(pos.x, pos.y, pos.z), nil, self.lineBinds.hooks["QuestHintArrow"] or 1)
+		--self.trackerList.QuestArrow:AddTarget(Vector3.New(pos.x, pos.y, pos.z))
 	end
 	self.hookedFunctions["QuestHintArrow"](s, wndHandler, wndControl, eMouseButton)
 end
@@ -660,7 +682,9 @@ function TrackMaster:QuestObjectiveHintArrow(s, wndHandler, wndControl, eMouseBu
 			else
 				pos = quest:GetMapRegions()[1].tIndicator
 			end
-			self.trackerList.QuestArrow:AddTarget(Vector3.New(pos.x, pos.y, pos.z), nil, self.lineBinds.hooks["QuestHintArrow"] or 1)
+
+			self:SetTarget(Vector3.New(pos.x, pos.y, pos.z), nil, self.lineBinds.hooks["QuestHintArrow"] or 1)
+			--self.trackerList.QuestArrow:AddTarget(Vector3.New(pos.x, pos.y, pos.z), nil, self.lineBinds.hooks["QuestHintArrow"] or 1)
 		end
 	end
 	self.hookedFunctions["QuestObjectiveHintArrow"](s, wndHandler, wndControl, eMouseButton)
@@ -688,6 +712,7 @@ function TrackMaster:AddHookZoneMap()
 				local tWorldLoc = zoneMap.wndZoneMap:GetWorldLocAtPoint(tPoint.x, tPoint.y)
 				local nLocX = math.floor(tWorldLoc.x + .5)
 				local nLocZ = math.floor(tWorldLoc.z + .5)
+				self:SetTarget(Vector3.New(nLocX, GameLib.GetPlayerUnit():GetPosition().y, nLocZ), nil, self.lineBinds.hooks["ZoneMap"] or 1)
 				--self:trackerList.ZoneMap:AddTarget(Vector3.New(nLocX, GameLib.GetPlayerUnit():GetPosition().y, nLocZ))
 			end			
 			self.hookedFunctions["ZoneMapClick"](s, wndHandler, wndControl, eButton, nX, nY, bDoubleClick)
@@ -714,8 +739,10 @@ function TrackMaster:AddHookGroupFrame()
 			local unitMember = GroupLib.GetUnitForGroupMember(nMemberIdx)
 
 			if nMemberIdx and unitMember then	
-				self.trackerList.GroupFrame:ClearAllTargets()			
-				self.trackerList.GroupFrame:AddTarget(unitMember)
+				self:SetTarget(unitMember, nil, self.lineBinds.hooks["GroupFrame"] or 1)
+
+				--self.trackerList.GroupFrame:ClearAllTargets()			
+				--self.trackerList.GroupFrame:AddTarget(unitMember)
 			end			
 			self.hookedFunctions["GroupPortraitClick"](s, wndHandler, wndControl, eMouseButton)	
 		end
@@ -980,13 +1007,10 @@ function TrackMaster:OnLineSelect( wndHandler, wndControl, eMouseButton )
 	self:OpenLineSelectDropdown(wndHandler, function(lineNo)
 		local panelButton = wndHandler:GetParent()
 		if panelButton:GetName():sub(1, 4) == "Hook" then
-			if panelButton:GetName():sub(5) == "Target" then
-				for lineId, line in pairs(self.lines) do
-					line.trackTarget = lineId == lineNo
-				end
-			end
+			self.trackerList[panelButton:GetName():sub(5)]:SetLine(lineNo)
 			self.lineBinds.hooks[panelButton:GetName():sub(5)] = lineNo
 		else
+			self.trackerList[panelButton:GetName():sub(6)]:SetLine(lineNo)
 			self.lineBinds.trackers[panelButton:GetName():sub(6)] = lineNo
 		end
 	end)

@@ -130,4 +130,38 @@ describe("TrackMaster", function()
 			end)
 		end)
 	end)
+
+	describe("OnSave", function()
+		it("should add savedata from trackerList", function()
+			trackMaster.trackerList = {
+				Target = { Save = function() return "TargetData" end },
+				Focus = { Save = function() return "FocusData" end }
+			}
+			local saveData = trackMaster:OnSave(GameLib.CodeEnumAddonSaveLevel.Character)
+
+			assert.is.same("TargetData", saveData.trackerList.Target)
+			assert.is.same("FocusData", saveData.trackerList.Focus)
+		end)
+	end)
+
+	describe("OnRestoreTrackerList", function()
+		it("should call load with correct savedata", function()
+			local data = {
+				Target = "TargetData",
+				Focus = "FocusData"
+			}
+
+			trackMaster.trackerList = {
+				Target = _G['TrackMasterLibs']['Tracker'].new(),
+				Focus = _G['TrackMasterLibs']['Tracker'].new()
+			}
+			stub(trackMaster.trackerList.Target, "Load")
+			stub(trackMaster.trackerList.Focus, "Load")
+
+			trackMaster:OnRestoreTrackerList(data)
+
+			assert.stub(trackMaster.trackerList.Target.Load).was.called_with(trackMaster.trackerList.Target, "TargetData")
+			assert.stub(trackMaster.trackerList.Focus.Load).was.called_with(trackMaster.trackerList.Focus, "FocusData")
+		end)
+	end)
 end)

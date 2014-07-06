@@ -62,6 +62,35 @@ describe("TrackLine", function()
 		end)
 	end)
 
+	describe("SetTarget", function()
+		before_each(function()
+			_G['TrackMasterLibs']['Tracker'] = mock(_G['TrackMasterLibs']['Tracker'])
+		end)
+
+		after_each(function()
+			unmock(_G['TrackMasterLibs']['Tracker'])
+		end)
+
+		it("should create new anonymous tracker if one does not exist", function()
+			trackLine:SetTarget({}, -1)
+
+			assert.is.not_nil(trackLine.anonymousTracker)
+		end)
+
+		it("should clear all targets within anonymous tracker", function()
+			trackLine:SetTarget({}, -1)
+
+			assert.spy(trackLine.anonymousTracker.ClearAllTargets).was.called(1)
+		end)
+
+		it("should add target to anonymous tracker", function()
+			local target = {}
+			trackLine:SetTarget({}, -1)
+
+			assert.spy(trackLine.anonymousTracker.AddTarget).was.called_with(trackLine.anonymousTracker, target)
+		end)
+	end)
+
 	describe("Update", function()
 		before_each(function()
 			local player = CreateUnit()

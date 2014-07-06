@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="Caedo" APIVersion="8" Name="TrackMaster" Description="Gives an easy way to track locations." Version="0.8.7">
+<Addon Author="Caedo" APIVersion="8" Name="TrackMaster" Description="Gives an easy way to track locations." Version="0.9.0">
     <Script Name="Libs/WildstarUT.lua"/>
-	<Script Name="Libs/LibError/LibError-1.0.lua"/>
-	<Script Name="Libs/LibAssert-1.0/LibAssert-1.0.lua"/>
-	<Script Name="Libs/LibBusted-2.0/LibBusted-2.0.lua"/>
+    <Script Name="Libs/LibError/LibError-1.0.lua"/>
+    <Script Name="Libs/LibAssert-1.0/LibAssert-1.0.lua"/>
+    <Script Name="Libs/LibBusted-2.0/LibBusted-2.0.lua"/>
     <Script Name="Tests/APITests.lua"/>
     <Script Name="ColorPicker.lua"/>
     <Script Name="Tracker.lua"/>
     <Script Name="TrackLine.lua"/>
     <Script Name="TrackMaster.lua"/>
     <Form Name="TrackMaster.xml"/>
-	<Test Name="APITests" File="Tests/BustedAPITests.lua"/>
+    <Test Name="APITests" File="Tests/BustedAPITests.lua"/>
     <Test Name="TrackerTests" File="Tests/TrackerTests.lua"/>
     <Test Name="TrackLineTests" File="Tests/TrackLineTests.lua"/>
     <Test Name="TrackMasterTests" File="Tests/TrackMasterTests.lua"/>
