@@ -2,13 +2,13 @@
 -- Client Lua Script for TrackMaster
 -- Copyright (c) NCsoft. All rights reserved
 -----------------------------------------------------------------------------------------------
- 
+
 require "Window"
- 
+
 -----------------------------------------------------------------------------------------------
 -- TrackMaster Module Definition
 -----------------------------------------------------------------------------------------------
-local TrackMaster = {} 
+local TrackMaster = {}
 TrackMaster .__index = TrackMaster
 
 local TrackLine = _G['TrackMasterLibs'].TrackLine
@@ -118,14 +118,14 @@ TrackMaster.Type = {
 	Track = 1,
 	Hook = 2
 }
- 
+
 -----------------------------------------------------------------------------------------------
 -- Initialization
 -----------------------------------------------------------------------------------------------
 function TrackMaster:new(o)
     o = o or {}
     setmetatable(o, self)
-    self.__index = self 
+    self.__index = self
 
 	o:Initialize()
 
@@ -150,7 +150,7 @@ function TrackMaster:Initialize()
 	self.yellow = CColor.new(1, 1, 0, 1)
 	self.red = CColor.new(1, 0, 0, 1)
 	self.clearDistance = 100
-	
+
 	self.hooks = {}
 	self.trackers = {}
 
@@ -174,7 +174,7 @@ end
 -- params: target - Target you wish to track, either
 --                  Vector3 or Unit object
 --         clearDistance - Distance in meters at which to
---                         clear the tracker 
+--                         clear the tracker
 --                         (-1 for never, nil for default)
 --         line - Line number on which to track this item
 -----------------------------------------------------------
@@ -307,7 +307,7 @@ function TrackMaster:OnLoad()
 		ZoneMap = self:RegisterTracker(),
 		GroupFrame = self:RegisterTracker()
 	}
-	
+
 	self.trackerPanel = Apollo.LoadForm(self.xmlDoc, "TrackerMicroPanel", nil, self)
 	self.trackerPanel:FindChild("TrackHolder"):Show(false, true)
 	self.trackerPanel:FindChild("HookHolder"):Show(false, true)
@@ -324,7 +324,7 @@ function TrackMaster:OnSave(eLevel)
 	local saveData = { }
 	saveData["Position"] = { }
 	saveData["Position"][1], saveData["Position"][2], _,_ = self.trackerPanel:GetAnchorOffsets()
-	
+
 	saveData["Hooks"] = self.hooks
 	saveData["Pinned"] = self.pinned
 	saveData["Alpha"] = self.alpha
@@ -334,13 +334,13 @@ function TrackMaster:OnSave(eLevel)
 	saveData.Lines = { }
 	for _, line in pairs(self.lines) do
 		table.insert(saveData.Lines, line:Save())
-	end	
+	end
 
 	saveData.trackerList = { }
 	for trackerName, tracker in pairs(self.trackerList) do
 		saveData.trackerList[trackerName] = tracker:Save()
 	end
-	
+
 	return saveData
 end
 
@@ -348,29 +348,29 @@ function TrackMaster:OnRestore(eLevel, tData)
 	if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Character then
 		return nil
 	end
-	
+
 	if tData["Position"] ~= nil then
 		self.trackerPanel:SetAnchorOffsets(tData["Position"][1], tData["Position"][2], tData["Position"][1] + self.trackerPanel:GetWidth(), tData["Position"][2] + self.trackerPanel:GetHeight())
 	end
-	
+
 	if tData["Pinned"] ~= nil then
 		self.pinned = tData["Pinned"]
 	end
 	self.trackerPanel:FindChild("Pin"):SetCheck(self.pinned)
-	
+
 	if not self.pinned then
 		self.trackerPanel:Show(false)
 	end
-	
+
 	if tData["Alpha"] ~= nil then
 		self:SetAlpha(tData["Alpha"])
 		self.trackerPanel:FindChild("Opacity"):FindChild("SliderBar"):SetValue(self.alpha)
 	end
-	
+
 	if tData["Hooks"] == nil then
 		tData["Hooks"] = {}
 	end
-	
+
 	if tData["Trackers"] == nil then
 		tData["Trackers"] = {}
 	end
@@ -380,7 +380,7 @@ function TrackMaster:OnRestore(eLevel, tData)
 			local l = nil
 			if lineNo ~= 1 then
 				l = TrackLine.new(self)
-				table.insert(self.lines, l)	
+				table.insert(self.lines, l)
 			else
 				l = self.lines[1]
 			end
@@ -401,14 +401,14 @@ function TrackMaster:OnRestore(eLevel, tData)
 
 	self:OnRestoreTrackerList(tData.trackerList)
 
-	
+
 	self.hooks["Target"] = tData["Hooks"]["Target"] == nil and true or tData["Hooks"]["Target"]
 	self.hooks["QuestHintArrow"] = tData["Hooks"]["QuestHintArrow"] == nil and true or tData["Hooks"]["QuestHintArrow"]
 	self.hooks["ZoneMap"] = tData["Hooks"]["ZoneMap"] == nil and true or tData["Hooks"]["ZoneMap"]
 	self.hooks["GroupFrame"] = tData["Hooks"]["GroupFrame"] == nil and true or tData["Hooks"]["GroupFrame"]
-	
+
 	self.trackers["Focus"] = tData["Trackers"]["Focus"] == nil and false or tData["Trackers"]["Focus"]
-	
+
 	self.trackerPanel:FindChild("HookTarget"):SetCheck(self.hooks["Target"])
 	self.trackerPanel:FindChild("HookQuestHintArrow"):SetCheck(self.hooks["QuestHintArrow"])
 	self.trackerPanel:FindChild("HookZoneMap"):SetCheck(self.hooks["ZoneMap"])
@@ -444,23 +444,23 @@ function TrackMaster:GetAsyncLoadStatus()
 		if self.wndMain == nil then
 			Apollo.AddAddonErrorText(self, "Could not load the main window for some reason.")
 			return Apollo.AddonLoadStatus.LoadingError
-		end			
-		
-	    self.wndMain:Show(false, true)	
+		end
+
+	    self.wndMain:Show(false, true)
 
 		Apollo.RegisterSlashCommand("mailbox", "OnMailbox", self)
-		
+
 		Apollo.RegisterSlashCommand("trackmaster", "OnShow", self)
 		Apollo.RegisterSlashCommand("tm", "OnShow", self)
 		Apollo.RegisterSlashCommand("tmc", "OnTrackMasterOn", self)
-		
+
 		Apollo.RegisterEventHandler("UnitCreated", "OnUnitCreated", self)
 		Apollo.RegisterEventHandler("UnitDestroyed", "OnUnitDestroyed", self)
 
 		self.timer = ApolloTimer.Create(1/60, true, "OnTimer", self)
 		self.rotationTimer = ApolloTimer.Create(1/5, true, "OnRotation", self)
 		--Apollo.RegisterEventHandler("NextFrame", "OnTimer", self)
-		
+
 
 		local iconPicker = self.wndMain:FindChild("IconPicker"):FindChild("IconList")
 		iconPicker:DestroyChildren()
@@ -494,12 +494,12 @@ function TrackMaster:GetAsyncLoadStatus()
 		end
 
 		self:RepopulateLineList()
-		
+
 		--self.xmlDoc = nil
-		
+
 		-- register our Addon so others can wait for it if they want
 		g_AddonsLoaded["TrackMaster"] = true
-		
+
 		return Apollo.AddonLoadStatus.Loaded
 	end
 	return Apollo.AddonLoadStatus.Loading
@@ -568,7 +568,7 @@ function TrackMaster:OnMailbox()
 			closestMailboxDist = dist
 		end
 	end
-	
+
 	if closestMailbox ~= nil then
 		self:SetTarget(closestMailbox, nil, self.lineBinds.trackers.Mailbox or 1)
 	else
@@ -609,19 +609,19 @@ function TrackMaster:UpdateHooks()
 	else
 		self:RemoveHookQuestArrow()
 	end
-	
+
 	if self.hooks["ZoneMap"] then
 		self:AddHookZoneMap()
 	else
 		self:RemoveHookZoneMap()
-	end	
-	
+	end
+
 	if self.hooks["GroupFrame"] then
 		self:AddHookGroupFrame()
 	else
 		self:RemoveHookGroupFrame()
 	end
-	
+
 	if self.hooks["GroupFrame"] then
 		self:AddHookRaidFrame()
 	else
@@ -655,7 +655,7 @@ function TrackMaster:AddHookQuestArrow()
 end
 
 function TrackMaster:QuestHintArrow(s, wndHandler, wndControl, eMouseButton)
-	local quest = wndHandler:GetData():GetData()
+    local quest = wndHandler:GetData().wndQuest:GetData()
 	if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
 		local pos = quest:GetMapRegions()[1].tIndicator
 		self:SetTarget(Vector3.New(pos.x, pos.y, pos.z), nil, self.lineBinds.hooks["QuestHintArrow"] or 1)
@@ -666,7 +666,7 @@ end
 
 function TrackMaster:QuestObjectiveHintArrow(s, wndHandler, wndControl, eMouseButton)
 	local questHolder = wndHandler:GetData()
-	
+
 	if questHolder and questHolder.peoObjective then
 		local quest = questHolder.peoObjective
 		if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
@@ -714,7 +714,7 @@ function TrackMaster:AddHookZoneMap()
 				local nLocZ = math.floor(tWorldLoc.z + .5)
 				self:SetTarget(Vector3.New(nLocX, GameLib.GetPlayerUnit():GetPosition().y, nLocZ), nil, self.lineBinds.hooks["ZoneMap"] or 1)
 				--self:trackerList.ZoneMap:AddTarget(Vector3.New(nLocX, GameLib.GetPlayerUnit():GetPosition().y, nLocZ))
-			end			
+			end
 			self.hookedFunctions["ZoneMapClick"](s, wndHandler, wndControl, eButton, nX, nY, bDoubleClick)
 		end
 	end
@@ -735,16 +735,16 @@ function TrackMaster:AddHookGroupFrame()
 			local tInfo = wndHandler:GetData()
 			local nMemberIdx = tInfo[1]
 			local strName = tInfo[2]
-			
+
 			local unitMember = GroupLib.GetUnitForGroupMember(nMemberIdx)
 
-			if nMemberIdx and unitMember then	
+			if nMemberIdx and unitMember then
 				self:SetTarget(unitMember, nil, self.lineBinds.hooks["GroupFrame"] or 1)
 
-				--self.trackerList.GroupFrame:ClearAllTargets()			
+				--self.trackerList.GroupFrame:ClearAllTargets()
 				--self.trackerList.GroupFrame:AddTarget(unitMember)
-			end			
-			self.hookedFunctions["GroupPortraitClick"](s, wndHandler, wndControl, eMouseButton)	
+			end
+			self.hookedFunctions["GroupPortraitClick"](s, wndHandler, wndControl, eMouseButton)
 		end
 	end
 end
@@ -769,7 +769,7 @@ function TrackMaster:AddHookRaidFrame()
 			if unit then
 				self:SetTarget(unit, nil, self.lineBinds.hooks["GroupFrame"] or 1)
 			end
-			self.hookedFunctions["RaidMemberBtnClick"](s, wndHandler, wndControl, eMouseButton)	
+			self.hookedFunctions["RaidMemberBtnClick"](s, wndHandler, wndControl, eMouseButton)
 		end
 	end
 end
@@ -843,7 +843,7 @@ function TrackMaster:OnDeleteLine( wndHandler, wndControl, eMouseButton )
 				if hook == tonumber(id) then
 					self.lineBinds.hooks[hookId] = nil
 				end
-			end			
+			end
 
 			for trackerId, tracker in pairs(self.lineBinds.trackers) do
 				if tracker == tonumber(id) then
@@ -864,7 +864,7 @@ function TrackMaster:OnTrackTypeChanged(wndHandler, wndControl, id)
 	else
 		lineItem:FindChild("Distance"):Show(false, true)
 	end
-	
+
 	line:SetTrackMode(id)
 end
 
@@ -872,7 +872,7 @@ function TrackMaster:OnDistanceChanged( wndHandler, wndControl, strText )
 	local lineItem = wndHandler:GetParent()
 	local line = lineItem:GetData()
 	local distance = tonumber(wndHandler:GetText()) or 10
-	
+
 	line:SetDistance(distance)
 end
 
@@ -880,7 +880,7 @@ function TrackMaster:OnShowDistanceMarkerChanged( wndHandler, wndControl, eMouse
 	local lineItem = wndHandler:GetParent()
 	local line = lineItem:GetData()
 	local distance = tonumber(wndHandler:GetText()) or 10
-	
+
 	line:SetShowDistanceMarker(wndHandler:IsChecked())
 end
 
@@ -947,7 +947,7 @@ function TrackMaster:SetAlpha(value)
 	self.green.a = value
 	self.yellow.a = value
 	self.red.a = value
-	
+
 	self.trackerPanel:FindChild("Opacity"):SetText("Opacity: " .. string.format("%.2f", value))
 end
 
@@ -960,7 +960,7 @@ end
 
 function TrackMaster:LockTrackState( wndHandler, wndControl, eMouseButton )
 	local trackName = wndHandler:GetName():sub(6)
-	if trackName == "Focus" then	
+	if trackName == "Focus" then
 		self:SetFocusTrackState(wndHandler:IsChecked())
 	end
 end
