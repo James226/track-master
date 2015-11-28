@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="Caedo" APIVersion="8" Name="TrackMaster_Subdue" Description="Track subdued weapons" Version="0.1.1">
+<Addon Author="Caedo" APIVersion="11" Name="TrackMaster_Subdue" Description="Track subdued weapons" Version="0.1.5">
     <Script Name="TrackMaster_Subdue.lua"/>
     <Form Name="TrackMaster_Subdue.xml"/>
 </Addon>

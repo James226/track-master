@@ -196,7 +196,9 @@ function TrackMaster:SetTarget(target, clearDistance, line)
 		self.trackerPanel:FindChild("Coord"):SetText("")
 	end
 
-	self.lines[line]:SetTarget(target, clearDistance)
+	if self.lines[line] ~= nil then
+		self.lines[line]:SetTarget(target, clearDistance)
+	end
 end
 
 function TrackMaster:RegisterTracker()
@@ -303,7 +305,7 @@ function TrackMaster:OnLoad()
 	self.trackerList = {
 		Target = self:RegisterTracker(),
 		Focus = self:RegisterTracker(),
-		QuestArrow = self:RegisterTracker(),
+		QuestHintArrow = self:RegisterTracker(),
 		ZoneMap = self:RegisterTracker(),
 		GroupFrame = self:RegisterTracker()
 	}
@@ -671,7 +673,7 @@ function TrackMaster:QuestObjectiveHintArrow(s, wndHandler, wndControl, eMouseBu
 		local quest = questHolder.peoObjective
 		if quest ~= nil and Quest.is(quest) and # quest:GetMapRegions() > 0 then
 			local pos = quest:GetMapRegions()[1].tIndicator
-			self.trackerList.QuestArrow:AddTarget(Vector3.New(pos.x, pos.y, pos.z))
+			self.trackerList.QuestHintArrow:AddTarget(Vector3.New(pos.x, pos.y, pos.z))
 		end
 	elseif questHolder and questHolder.queOwner then
 		local quest = wndHandler:GetData().queOwner

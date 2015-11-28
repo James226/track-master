@@ -1,6 +1,6 @@
 require "Window"
 
-local TrackLine  = {} 
+local TrackLine  = {}
 local Tracker = _G['TrackMasterLibs']['Tracker']
 
 setmetatable(TrackLine, {
@@ -49,7 +49,7 @@ function TrackLine:Load(saveData)
 	if saveData ~= nil then
 		self:SetBGColor(CColor.new(saveData.bgColor[1], saveData.bgColor[2], saveData.bgColor[3], saveData.bgColor[4]))
 		self.Sprite = saveData.Sprite
-              
+
 		if saveData.trackMode ~= nil then
 			self:SetTrackMode(saveData.trackMode)
 		end
@@ -236,7 +236,7 @@ function TrackLine:DrawLineBetween(playerVec, targetVec)
 	local color
 	for i = 0, 20 do
 		local fraction = (i+1)/21
-		
+
 		self.marker[i]:SetWorldLocation(Vector3.InterpolateLinear(playerVec, targetVec, fraction))
 		if not self.marker[i]:IsOnScreen() then
 			self.marker[i]:Show(false, true)
@@ -264,7 +264,7 @@ end
 
 function TrackLine:DrawCircleAround(playerVec, targetVec)
 	local totalDistance = (playerVec - targetVec):Length()
-	
+
 	for i = 0, 20 do
 		local pos = targetVec + self.marker[i]:GetData()
 

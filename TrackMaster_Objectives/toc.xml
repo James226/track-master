@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="Caedo, hitbutton" APIVersion="8" Name="TrackMaster: Objectives" Description="Easily track Quest, Path Mission &amp; Challenge objectives by drawing a line to the next nearest objective." Version="0.1">
+<Addon Author="Caedo, hitbutton" APIVersion="11" Name="TrackMaster: Objectives" Description="Easily track Quest, Path Mission &amp; Challenge objectives by drawing a line to the next nearest objective." Version="0.1.4">
     <Script Name="TrackMaster_Objectives.lua"/>
     <Form Name="TrackMaster_Objectives.xml"/>
 </Addon>
